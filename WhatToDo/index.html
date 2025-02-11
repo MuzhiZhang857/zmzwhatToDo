@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发帖式待办应用</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <h1>发帖式待办应用</h1>
+        <div id="login-btn-container">
+            <button id="login-btn">登录</button>
+        </div>
+    </header>
+
+    <!-- 登录界面 -->
+    <div id="login-section" class="login-section hidden">
+        <h2>登录</h2>
+        <form id="login-form">
+            <label for="username">用户名:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">密码:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">登录</button>
+        </form>
+    </div>
+
+    <!-- 主应用界面 -->
+    <main>
+        <!-- 左侧内容区域 -->
+        <section id="content-section">
+            <!-- 发帖区域 -->
+            <section id="post-section">
+                <h2>发布新备忘录</h2>
+                <form id="post-form">
+                    <label for="title">标题:</label>
+                    <input type="text" id="title" name="title" required>
+
+                    <label for="content">内容:</label>
+                    <textarea id="content" name="content" required></textarea>
+
+                    <div id="post-buttons">
+                        <button type="button" id="add-code-btn">发布代码</button>
+                        <button type="button" id="add-file-btn">发布文件</button>
+                        <button type="button" id="add-topic-btn">添加话题 (#)</button>
+                    </div>
+
+                    <button type="submit" id="publish-btn">发布</button>
+                </form>
+            </section>
+
+            <!-- 备忘录列表 -->
+            <section id="memo-list">
+                <h2>备忘录列表</h2>
+                <input type="text" id="search-input" placeholder="快速检索...">
+                <ul id="memo-items"></ul>
+            </section>
+        </section>
+
+        <!-- 右侧地图和热力图区域 -->
+        <aside id="map-section">
+            <!-- 日历 -->
+            <section id="calendar-section">
+                <h3>日历</h3>
+                <div id="calendar"></div>
+            </section>
+
+            <!-- 地图 -->
+            <section id="map-container">
+                <h3>地图</h3>
+                <div id="map" style="height: 300px;"></div>
+            </section>
+
+            <!-- 热力图 -->
+            <section id="heatmap-section">
+                <h3>热力图</h3>
+                <div id="heatmap" style="height: 300px;"></div>
+            </section>
+        </aside>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 待办应用</p>
+    </footer>
+
+    <!-- 引入必要的JS库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="app.js"></script>
+</body>
+</html>

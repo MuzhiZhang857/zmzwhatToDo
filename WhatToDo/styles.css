@@ -1,0 +1,287 @@
+/* 全局样式 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4; /* 浅灰色背景 */
+    color: #333; /* 深灰色文字 */
+}
+
+/* 顶部导航栏样式 */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #4CAF50; /* 绿色导航栏 */
+    color: white;
+    padding: 1em;
+}
+
+#login-btn-container button {
+    background-color: white;
+    color: #4CAF50;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#login-btn-container button:hover {
+    background-color: #e0e0e0;
+}
+
+/* 登录界面样式 */
+.login-section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.login-section form {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-section input {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.login-section button {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.login-section button:hover {
+    background-color: #45a049;
+}
+
+/* 隐藏元素 */
+.hidden {
+    display: none;
+}
+
+/* 主应用界面布局 */
+main {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+/* 左侧内容区域 */
+#content-section {
+    flex: 3;
+    margin-right: 20px;
+}
+
+/* 右侧地图和热力图区域 */
+#map-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 日历样式 */
+#calendar-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 地图容器样式 */
+#map-container, #heatmap-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 发帖区域样式 */
+#post-section {
+    margin-top: 20px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#post-section form {
+    display: flex;
+    flex-direction: column;
+}
+
+#post-section label {
+    margin-top: 10px;
+}
+
+#post-section input, #post-section textarea {
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#post-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#post-buttons button {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#post-buttons button:hover {
+    background-color: #45a049;
+}
+
+/* 发布按钮样式 */
+#publish-btn {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    align-self: flex-end; /* 将发布按钮放置在右侧 */
+}
+
+#publish-btn:hover {
+    background-color: #45a049;
+}
+
+/* 备忘录列表样式 */
+#memo-items {
+    list-style-type: none;
+    padding: 0;
+}
+
+.memo-item {
+    background-color: white;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+}
+
+/* 代码块样式 */
+.code-block {
+    background-color: #f9f9f9;
+    border-left: 4px solid #4CAF50;
+    border-radius: 4px;
+    margin: 10px 0;
+    padding: 10px;
+    position: relative;
+}
+
+.code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.code-block-header .code-lang {
+    font-size: 0.8rem;
+    color: #4CAF50;
+}
+
+.code-block-header .copy-btn {
+    cursor: pointer;
+    color: #4CAF50;
+}
+
+.code-block pre {
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+.code-block code {
+    color: #333;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+/* 评论样式 */
+.comment-section {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.comment-section h4 {
+    margin-bottom: 10px;
+    color: #4CAF50;
+}
+
+.comment-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.comment-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.comment-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.comment-form {
+    display: flex;
+    gap: 10px;
+}
+
+.comment-form input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.comment-form button {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.comment-form button:hover {
+    background-color: #45a049;
+}
