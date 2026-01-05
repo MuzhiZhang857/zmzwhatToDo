@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>校园备忘录 - 注册</title>
+
+  <link href="vendor/tailwind.min.css" rel="stylesheet">
+  <link href="vendor/all.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+
+  <style>
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); }
+    .btn-primary { background: #000; color: #fff; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .input { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="card w-full max-w-md rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-1">注册</h1>
+    <p class="text-sm text-gray-500 mb-6">注册后如果后端返回 token，将自动登录</p>
+
+    <form id="regForm" class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1" for="username">用户名（可选）</label>
+        <input id="username" class="input w-full rounded px-3 py-2" type="text" placeholder="不填则用邮箱前缀生成" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1" for="name">姓名（可选）</label>
+        <input id="name" class="input w-full rounded px-3 py-2" type="text" placeholder="如果后端有 name 字段会保存" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1" for="email">邮箱</label>
+        <input id="email" class="input w-full rounded px-3 py-2" type="email" placeholder="请输入合法邮箱地址" required />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1" for="password">密码</label>
+        <input id="password" class="input w-full rounded px-3 py-2" type="password" placeholder="至少6位" required />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1" for="password2">确认密码</label>
+        <input id="password2" class="input w-full rounded px-3 py-2" type="password" placeholder="再次输入密码" required />
+      </div>
+
+      <button id="regBtn" class="btn-primary w-full rounded py-2" type="submit">
+        <i class="fas fa-user-plus mr-2"></i> 注册
+      </button>
+
+      <div class="text-sm text-gray-600">
+        已有账号？
+        <a class="underline" href="login.html">去登录</a>
+      </div>
+
+      <div id="msg" class="text-sm"></div>
+    </form>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    (function () {
+      // 已登录则直接跳首页
+      if (window.API.getAccessToken()) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const form = document.getElementById("regForm");
+      const btn = document.getElementById("regBtn");
+      const msg = document.getElementById("msg");
+
+      function setMsg(text, ok = false) {
+        msg.textContent = text || "";
+        msg.className = ok ? "text-sm text-green-600" : "text-sm text-red-600";
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setMsg("");
+
+        const username = document.getElementById("username").value.trim();
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const password2 = document.getElementById("password2").value;
+
+        if (!email || !password) return setMsg("邮箱和密码不能为空");
+        if (password.length < 6) return setMsg("密码至少 6 位");
+        if (password !== password2) return setMsg("两次密码不一致");
+
+        btn.disabled = true;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> 注册中...';
+
+        try {
+          const data = await window.API.registerAccount({ username, name, email, password });
+
+          // 如果后端注册已返回 access，则已自动登录
+          if (window.API.getAccessToken()) {
+            setMsg("注册成功，已登录，正在跳转…", true);
+            window.location.href = "index.html";
+            return;
+          }
+
+          setMsg((data && data.message) ? data.message : "注册成功，请登录", true);
+          window.location.href = "login.html";
+        } catch (err) {
+          setMsg(err.message || "注册失败");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = oldHtml;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

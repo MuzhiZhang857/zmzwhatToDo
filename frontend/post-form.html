@@ -1,0 +1,497 @@
+
+<!-- self_improvement_assistant/frontend/post-form.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>发布备忘录 - 校园备忘录</title>
+    <link href="vendor/tailwind.min.css" rel="stylesheet">
+    <link href="vendor/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .post-form-container {
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .tag-input {
+            border: 1px dashed #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        .tag-input:focus {
+            border-color: #000;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background-color: #000;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #333;
+            transform: translateY(-1px);
+        }
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        .file-upload-label {
+            border: 1px dashed #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        .file-upload-label:hover {
+            border-color: #000;
+        }
+        .tag {
+            background-color: #f0f0f0;
+            transition: all 0.2s ease;
+        }
+        .tag:hover {
+            background-color: #e0e0e0;
+        }
+        .file-type-hint {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="particles-js"></div>
+    
+    <div class="min-h-screen flex items-center justify-center px-4 py-8">
+        <div class="post-form-container w-full max-w-2xl p-6 rounded-lg">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-xl font-bold">发布新备忘录</h1>
+                <button onclick="window.history.back()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="postForm" class="space-y-4">
+                <div class="flex items-start">
+                    <img src="https://picsum.photos/seed/user/40/40" alt="用户头像" class="w-10 h-10 rounded-full mr-3">
+                    <textarea id="memoContent" class="flex-1 p-3 border border-gray-300 rounded-md" 
+                        rows="5" placeholder="分享你的想法、计划或问题..." required></textarea>
+                </div>
+                
+                <div id="tagsContainer" class="flex flex-wrap gap-2 mb-2">
+                    <!-- 动态生成的标签会显示在这里 -->
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="text" id="tagInput" class="tag-input text-sm px-3 py-1 rounded-md" 
+                        placeholder="#添加话题 (按Enter添加)">
+                    <button type="button" id="addTagBtn" class="ml-2 text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                
+                <div class="flex flex-wrap gap-3">
+                    <div class="relative">
+                        <input type="file" id="fileUpload" class="hidden" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar">
+                        <label for="fileUpload" class="file-upload-label px-3 py-2 rounded-md cursor-pointer flex items-center">
+                            <i class="fas fa-paperclip mr-2"></i> 附件
+                        </label>
+                        <div class="file-type-hint">支持 JPG, PNG, PDF, DOC, XLS, PPT, ZIP</div>
+                    </div>
+                    
+                    <button type="button" id="addLinkBtn" class="px-3 py-2 border border-gray-300 rounded-md flex items-center">
+                        <i class="fas fa-link mr-2"></i> 链接
+                    </button>
+                    
+                    <button type="button" id="addLocationBtn" class="px-3 py-2 border border-gray-300 rounded-md flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2"></i> 位置
+                    </button>
+                    
+                    <button type="button" id="addCodeBtn" class="px-3 py-2 border border-gray-300 rounded-md flex items-center">
+                        <i class="fas fa-code mr-2"></i> 代码
+                    </button>
+                </div>
+                
+                <div id="attachmentsPreview" class="hidden">
+                    <div class="border-t pt-3 mt-3">
+                        <h3 class="text-sm font-medium mb-2">附件预览</h3>
+                        <div id="filesPreview" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+                
+                <div id="linkInputContainer" class="hidden">
+                    <input type="url" id="linkInput" class="w-full p-2 border border-gray-300 rounded-md mt-2" 
+                        placeholder="输入链接地址">
+                </div>
+                
+                <div id="locationInputContainer" class="hidden">
+                    <input type="text" id="locationInput" class="w-full p-2 border border-gray-300 rounded-md mt-2" 
+                        placeholder="输入位置或选择当前位置">
+                    <button type="button" id="useCurrentLocation" class="text-xs text-gray-500 mt-1 hover:text-gray-700">
+                        <i class="fas fa-location-arrow mr-1"></i> 使用当前位置
+                    </button>
+                </div>
+                
+                <div id="codeInputContainer" class="hidden">
+                    <select id="codeLanguage" class="w-full p-2 border border-gray-300 rounded-md mt-2">
+                        <option value="">选择语言</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="csharp">C#</option>
+                        <option value="cpp">C++</option>
+                        <option value="php">PHP</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="sql">SQL</option>
+                    </select>
+                    <textarea id="codeContent" class="w-full p-2 border border-gray-300 rounded-md mt-2 font-mono" 
+                        rows="5" placeholder="输入代码..."></textarea>
+                </div>
+                
+                <div class="border-t pt-4 mt-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="visibility" value="public" class="mr-2" checked>
+                                <span>公开</span>
+                            </label>
+                            <label class="flex items-center text-sm ml-4">
+                                <input type="radio" name="visibility" value="private" class="mr-2">
+                                <span>仅自己可见</span>
+                            </label>
+                            <label class="flex items-center text-sm ml-4">
+                                <input type="radio" name="visibility" value="team" class="mr-2">
+                                <span>团队可见</span>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary px-6 py-2 rounded-md text-white">
+                            发布
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="vendor/particles.min.js"></script>
+    <script>
+        // 粒子特效初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": {
+                        "value": 40,
+                        "density": {
+                            "enable": true,
+                            "value_area": 800
+                        }
+                    },
+                    "color": {
+                        "value": "#cccccc"
+                    },
+                    "shape": {
+                        "type": "circle",
+                        "stroke": {
+                            "width": 0,
+                            "color": "#000000"
+                        },
+                    },
+                    "opacity": {
+                        "value": 0.5,
+                        "random": false,
+                    },
+                    "size": {
+                        "value": 3,
+                        "random": true,
+                    },
+                    "line_linked": {
+                        "enable": true,
+                        "distance": 150,
+                        "color": "#cccccc",
+                        "opacity": 0.2,
+                        "width": 1
+                    },
+                    "move": {
+                        "enable": true,
+                        "speed": 2,
+                        "direction": "none",
+                        "random": false,
+                        "straight": false,
+                        "out_mode": "out",
+                        "bounce": false,
+                    }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": {
+                        "onhover": {
+                            "enable": true,
+                            "mode": "grab"
+                        },
+                        "onclick": {
+                            "enable": true,
+                            "mode": "push"
+                        },
+                        "resize": true
+                    },
+                    "modes": {
+                        "grab": {
+                            "distance": 140,
+                            "line_linked": {
+                                "opacity": 1
+                            }
+                        },
+                        "push": {
+                            "particles_nb": 4
+                        }
+                    }
+                },
+                "retina_detect": true
+            });
+
+            // 标签输入功能
+            const tagInput = document.getElementById('tagInput');
+            const tagsContainer = document.getElementById('tagsContainer');
+            const addTagBtn = document.getElementById('addTagBtn');
+            
+            function addTag() {
+                const tagText = tagInput.value.trim();
+                if (tagText && !tagText.startsWith('#')) {
+                    const tag = document.createElement('span');
+                    tag.className = 'tag text-xs px-2 py-1 rounded-md flex items-center';
+                    tag.innerHTML = `#${tagText} <button type="button" class="ml-1 text-gray-400 hover:text-gray-600 remove-tag">&times;</button>`;
+                    
+                    tagsContainer.appendChild(tag);
+                    tagInput.value = '';
+                    
+                    // 绑定删除标签按钮
+                    tag.querySelector('.remove-tag').addEventListener('click', function() {
+                        tag.remove();
+                    });
+                }
+            }
+            
+            tagInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                }
+            });
+            
+            addTagBtn.addEventListener('click', addTag);
+            
+            // 文件上传预览
+            const fileUpload = document.getElementById('fileUpload');
+            const filesPreview = document.getElementById('filesPreview');
+            const attachmentsPreview = document.getElementById('attachmentsPreview');
+            
+            fileUpload.addEventListener('change', function() {
+                filesPreview.innerHTML = '';
+                
+                if (this.files.length > 0) {
+                    attachmentsPreview.classList.remove('hidden');
+                    
+                    for (let i = 0; i < this.files.length; i++) {
+                        const file = this.files[i];
+                        
+                        // 检查文件类型
+                        const fileType = file.type;
+                        const fileName = file.name;
+                        const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                        
+                        if (file.size > 10 * 1024 * 1024) { // 10MB限制
+                            alert(`文件"${fileName}"超过10MB大小限制`);
+                            continue;
+                        }
+                        
+                        const filePreview = document.createElement('div');
+                        filePreview.className = 'flex items-center text-sm bg-gray-100 px-2 py-1 rounded';
+                        
+                        let icon;
+                        if (fileType.startsWith('image/')) {
+                            icon = '<i class="fas fa-image mr-2"></i>';
+                        } else if (fileType.startsWith('video/')) {
+                            icon = '<i class="fas fa-video mr-2"></i>';
+                        } else if (fileType.startsWith('audio/')) {
+                            icon = '<i class="fas fa-music mr-2"></i>';
+                        } else if (fileType.includes('pdf')) {
+                            icon = '<i class="fas fa-file-pdf mr-2"></i>';
+                        } else if (fileType.includes('word') || fileType.includes('document')) {
+                            icon = '<i class="fas fa-file-word mr-2"></i>';
+                        } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
+                            icon = '<i class="fas fa-file-excel mr-2"></i>';
+                        } else if (fileType.includes('powerpoint') || fileType.includes('presentation')) {
+                            icon = '<i class="fas fa-file-powerpoint mr-2"></i>';
+                        } else if (fileType.includes('zip') || fileType.includes('compressed')) {
+                            icon = '<i class="fas fa-file-archive mr-2"></i>';
+                        } else {
+                            icon = '<i class="fas fa-file mr-2"></i>';
+                        }
+                        
+                        filePreview.innerHTML = `
+                            ${icon}
+                            <span class="truncate max-w-xs">${fileName} (${fileSize}MB)</span>
+                            <button type="button" class="ml-2 text-gray-400 hover:text-gray-600 remove-file" data-index="${i}">
+                                &times;
+                            </button>
+                        `;
+                        
+                        filesPreview.appendChild(filePreview);
+                        
+                        // 绑定删除文件按钮
+                        filePreview.querySelector('.remove-file').addEventListener('click', function() {
+                            // 创建一个新的FileList来移除选中的文件
+                            const dataTransfer = new DataTransfer();
+                            for (let j = 0; j < fileUpload.files.length; j++) {
+                                if (j !== parseInt(this.dataset.index)) {
+                                    dataTransfer.items.add(fileUpload.files[j]);
+                                }
+                            }
+                            fileUpload.files = dataTransfer.files;
+                            
+                            // 重新触发change事件
+                            const event = new Event('change');
+                            fileUpload.dispatchEvent(event);
+                        });
+                    }
+                } else {
+                    attachmentsPreview.classList.add('hidden');
+                }
+            });
+            
+            // 链接输入
+            const addLinkBtn = document.getElementById('addLinkBtn');
+            const linkInputContainer = document.getElementById('linkInputContainer');
+            
+            addLinkBtn.addEventListener('click', function() {
+                linkInputContainer.classList.toggle('hidden');
+                if (!linkInputContainer.classList.contains('hidden')) {
+                    locationInputContainer.classList.add('hidden');
+                    codeInputContainer.classList.add('hidden');
+                }
+            });
+            
+            // 位置输入
+            const addLocationBtn = document.getElementById('addLocationBtn');
+            const locationInputContainer = document.getElementById('locationInputContainer');
+            const useCurrentLocation = document.getElementById('useCurrentLocation');
+            
+            addLocationBtn.addEventListener('click', function() {
+                locationInputContainer.classList.toggle('hidden');
+                if (!locationInputContainer.classList.contains('hidden')) {
+                    linkInputContainer.classList.add('hidden');
+                    codeInputContainer.classList.add('hidden');
+                }
+            });
+            
+            useCurrentLocation.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+                        
+                        // 使用地理编码API获取位置名称 (这里只是示例)
+                        document.getElementById('locationInput').value = `当前位置 (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+                    }, function(error) {
+                        alert('无法获取当前位置: ' + error.message);
+                    });
+                } else {
+                    alert('您的浏览器不支持地理位置功能');
+                }
+            });
+            
+            // 代码输入
+            const addCodeBtn = document.getElementById('addCodeBtn');
+            const codeInputContainer = document.getElementById('codeInputContainer');
+            
+            addCodeBtn.addEventListener('click', function() {
+                codeInputContainer.classList.toggle('hidden');
+                if (!codeInputContainer.classList.contains('hidden')) {
+                    linkInputContainer.classList.add('hidden');
+                    locationInputContainer.classList.add('hidden');
+                }
+            });
+            
+            // 表单提交
+            document.getElementById('postForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const content = document.getElementById('memoContent').value.trim();
+                if (!content) {
+                    alert('请输入备忘录内容');
+                    return;
+                }
+                
+                // 收集标签
+                const tags = [];
+                document.querySelectorAll('#tagsContainer .tag').forEach(tag => {
+                    tags.push(tag.textContent.replace('×', '').trim());
+                });
+                
+                // 收集附件
+                const files = [];
+                if (fileUpload.files.length > 0) {
+                    for (let i = 0; i < fileUpload.files.length; i++) {
+                        files.push({
+                            name: fileUpload.files[i].name,
+                            type: fileUpload.files[i].type,
+                            size: fileUpload.files[i].size
+                        });
+                    }
+                }
+                
+                // 收集链接
+                const link = document.getElementById('linkInput').value.trim();
+                
+                // 收集位置
+                const location = document.getElementById('locationInput').value.trim();
+                
+                // 收集代码
+                const codeLanguage = document.getElementById('codeLanguage').value;
+                const codeContent = document.getElementById('codeContent').value.trim();
+                
+                // 收集可见性设置
+                const visibility = document.querySelector('input[name="visibility"]:checked').value;
+                
+                // 创建备忘录对象
+                const memo = {
+                    id: 'memo-' + Date.now(),
+                    author: '当前用户', // 实际应用中应从登录用户获取
+                    avatar: 'https://picsum.photos/seed/currentuser/100/100',
+                    department: '计算机科学系', // 实际应用中应从用户数据获取
+                    content: content,
+                    tags: tags,
+                    timestamp: new Date().toISOString(),
+                    likes: 0,
+                    comments: [],
+                    attachments: files,
+                    link: link || null,
+                    location: location || null,
+                    code: codeContent ? {
+                        language: codeLanguage,
+                        content: codeContent
+                    } : null,
+                    visibility: visibility
+                };
+                
+                // 保存到本地存储
+                const memos = JSON.parse(localStorage.getItem('memos')) || [];
+                memos.unshift(memo);
+                localStorage.setItem('memos', JSON.stringify(memos));
+                
+                // 显示成功消息
+                alert('备忘录发布成功！');
+                
+                // 返回首页
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

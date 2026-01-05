@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>校园备忘录 - 登录</title>
+
+  <link href="vendor/tailwind.min.css" rel="stylesheet">
+  <link href="vendor/all.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+
+  <style>
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); }
+    .btn-primary { background: #000; color: #fff; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .input { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="card w-full max-w-md rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-1">登录</h1>
+    <p class="text-sm text-gray-500 mb-6">使用邮箱与密码登录</p>
+
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1" for="email">邮箱</label>
+        <input id="email" class="input w-full rounded px-3 py-2" type="email" placeholder="请输入邮箱" required />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1" for="password">密码</label>
+        <input id="password" class="input w-full rounded px-3 py-2" type="password" placeholder="至少6位" required />
+      </div>
+
+      <button id="loginBtn" class="btn-primary w-full rounded py-2" type="submit">
+        <i class="fas fa-sign-in-alt mr-2"></i> 登录
+      </button>
+
+      <div class="text-sm text-gray-600">
+        没有账号？
+        <a class="underline" href="register.html">去注册</a>
+      </div>
+
+      <div id="msg" class="text-sm"></div>
+    </form>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    (function () {
+      // 已登录则直接跳首页
+      if (window.API.getAccessToken()) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const form = document.getElementById("loginForm");
+      const btn = document.getElementById("loginBtn");
+      const msg = document.getElementById("msg");
+
+      function setMsg(text, ok = false) {
+        msg.textContent = text || "";
+        msg.className = ok ? "text-sm text-green-600" : "text-sm text-red-600";
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setMsg("");
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!email || !password) {
+          setMsg("邮箱和密码不能为空");
+          return;
+        }
+
+        btn.disabled = true;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> 登录中...';
+
+        try {
+          const data = await API.loginByEmail(email, password);
+          setMsg("登录成功，正在跳转…", true);
+          window.location.href = "index.html";
+        } catch (err) {
+          setMsg(err.message || "登录失败");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = oldHtml;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

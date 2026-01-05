@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园备忘录 - 打卡分享平台</title>
+
+    <!-- 本地化 CSS（不再使用任何 CDN） -->
+    <link rel="stylesheet" href="vendor/tailwind.min.css">
+    <link rel="stylesheet" href="vendor/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .sidebar {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+
+        .post-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1);
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #e5e7eb;
+        }
+
+        #particles-js {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+<div id="particles-js"></div>
+
+<div class="flex h-screen">
+
+    <!-- 左侧栏 -->
+    <aside class="sidebar w-64 hidden md:block">
+        <div class="p-4 border-b text-center font-bold text-lg">
+            校园备忘录
+        </div>
+
+        <div class="p-4">
+            <!-- JWT 登录态区域 -->
+            <div id="auth-panel" class="mb-6 text-center"></div>
+
+            <!-- 日历 -->
+            <div class="mb-6">
+                <h3 class="font-semibold mb-2">活动日历</h3>
+                <div id="calendar-container" class="text-sm text-gray-500">
+                    日历加载中…
+                </div>
+            </div>
+
+            <!-- 团队 -->
+            <div class="mb-6">
+                <h3 class="font-semibold mb-2">我的团队</h3>
+                <div id="team-list" class="text-sm text-gray-500">
+                    暂无团队
+                </div>
+            </div>
+
+            <!-- 地图兜底 -->
+            <div id="baidu-map" class="text-sm text-gray-500">
+                地图功能暂不可用
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="flex-1 overflow-auto">
+  <div class="max-w-3xl mx-auto p-6">
+
+    <!-- 发布 -->
+    <div class="post-card p-4 mb-6" id="publish-card">
+      <div class="flex items-center mb-3">
+        <div class="comment-avatar rounded-full mr-3"></div>
+        <div class="font-medium">发布新备忘</div>
+      </div>
+
+      <textarea
+        id="post-content"
+        class="w-full border rounded p-2 mb-3"
+        placeholder="记录你的学习 / 计划 / 想法…"
+        rows="4"
+      ></textarea>
+
+      <div class="flex items-center justify-between gap-3">
+        <input
+          id="post-tags"
+          class="flex-1 border rounded p-2 text-sm"
+          placeholder="#添加话题（可选，支持 空格/逗号 分隔）"
+        />
+        <button id="publish-btn" class="bg-black text-white px-4 py-2 rounded">
+          发布
+        </button>
+      </div>
+    </div>
+
+    <!-- 动态流容器：后端帖子渲染到这里 -->
+    <div id="memo-feed"></div>
+
+  </div>
+</main>
+
+</div>
+
+<!-- 本地化 JS（顺序很重要） -->
+<script src="vendor/particles.min.js"></script>
+<script src="js/api.js"></script>
+
+<script src="js/app.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/team.js"></script>
+<script src="js/map.js"></script>
+<script src="js/theme-switcher.js"></script>
+<script src="comment-system.js"></script>
+
+<!-- 粒子背景（可删，不影响功能） -->
+<script>
+if (window.particlesJS) {
+    particlesJS("particles-js", {
+        particles: {
+            number: { value: 30 },
+            size: { value: 3 },
+            line_linked: { enable: true }
+        }
+    });
+}
+</script>
+
+<!-- JWT 登录态控制 -->
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const panel = document.getElementById("auth-panel");
+
+    if (!window.API || !API.getAccessToken()) {
+        location.href = "login.html";
+        return;
+    }
+
+    try {
+        const me = await API.fetchMe();
+        panel.innerHTML = `
+            <div>
+                <div class="w-12 h-12 rounded-full bg-gray-300 mx-auto mb-2"></div>
+                <div class="font-medium">${me.username}</div>
+                <div class="text-xs text-gray-500 mb-2">${me.email}</div>
+                <button id="logoutBtn" class="text-sm text-red-500">退出登录</button>
+            </div>
+        `;
+        document.getElementById("logoutBtn").onclick = () => {
+            API.logoutLocal();
+            location.href = "login.html";
+        };
+    } catch {
+        API.logoutLocal();
+        location.href = "login.html";
+    }
+});
+</script>
+
+</body>
+</html>
