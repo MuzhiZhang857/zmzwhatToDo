@@ -3,13 +3,16 @@ from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .models import Todo
 from django.utils.dateparse import parse_datetime
+from django.utils import timezone
+
+from .models import Todo
 
 def require_login(request):
     if not request.user.is_authenticated:
         return JsonResponse({"message": "未登录"}, status=401)
     return None
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class TodoListCreateView(View):
@@ -17,7 +20,9 @@ class TodoListCreateView(View):
         err = require_login(request)
         if err: return err
 
-        qs = Todo.objects.filter(owner=request.user).values("id","title","done","due_at","created_at")
+        qs = Todo.objects.filter(owner=request.user).values(
+            "id", "title", "done", "due_at", "completed_at", "created_at"
+        )
         return JsonResponse({"data": list(qs)}, status=200)
 
     def post(self, request):
@@ -39,6 +44,7 @@ class TodoListCreateView(View):
         t = Todo.objects.create(owner=request.user, title=title, due_at=due_dt)
         return JsonResponse({"message": "创建成功", "id": t.id}, status=201)
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class TodoDetailView(View):
     def patch(self, request, todo_id: int):
@@ -55,13 +61,27 @@ class TodoDetailView(View):
         except Todo.DoesNotExist:
             return JsonResponse({"message": "不存在"}, status=404)
 
+        # title
         if "title" in data:
             t.title = (data.get("title") or "").strip()
-        if "done" in data:
-            t.done = bool(data.get("done"))
+
+        # due_at
         if "due_at" in data:
             due_at = data.get("due_at")
             t.due_at = parse_datetime(due_at) if due_at else None
+
+        # ✅ done + completed_at
+        if "done" in data:
+            new_done = bool(data.get("done"))
+            if new_done and not t.done:
+                # False -> True：记录完成时间
+                t.done = True
+                t.completed_at = timezone.now()
+            elif (not new_done) and t.done:
+                # True -> False：清空完成时间
+                t.done = False
+                t.completed_at = None
+            # 如果 done 没变化，不改 completed_at
 
         t.save()
         return JsonResponse({"message": "已更新"}, status=200)

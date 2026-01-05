@@ -1,127 +1,132 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>校园备忘录 - 打卡分享平台</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>校园备忘录 - 打卡分享平台</title>
 
-    <!-- 本地化 CSS（不再使用任何 CDN） -->
-    <link rel="stylesheet" href="vendor/tailwind.min.css">
-    <link rel="stylesheet" href="vendor/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="vendor/tailwind.min.css">
+  <link rel="stylesheet" href="vendor/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 
-    <style>
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+  <!-- ✅ 代码高亮主题（把文件放到 vendor） -->
+  <link rel="stylesheet" href="vendor/github.min.css">
 
-        .sidebar {
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,.1);
-        }
+  <style>
+    body { background-color: #f5f5f5; color: #333; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .sidebar { background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .post-card { background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .comment-avatar { width: 32px; height: 32px; background-color: #e5e7eb; }
+    #particles-js { position: fixed; inset: 0; z-index: -1; }
 
-        .post-card {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,.1);
-        }
+    .chip { display:inline-flex; align-items:center; gap:6px; border:1px solid #e5e7eb; padding:2px 8px; border-radius:999px; font-size:12px; background:#f9fafb; }
+    .chip button { font-size:12px; color:#6b7280; }
+    .check-item-done { text-decoration: line-through; color:#9ca3af; }
 
-        .comment-avatar {
-            width: 32px;
-            height: 32px;
-            background-color: #e5e7eb;
-        }
-
-        #particles-js {
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-        }
-    </style>
+    .img-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
+    .img-grid img { width:100%; height:96px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; }
+    .file-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid #f3f4f6; }
+    .file-row a { text-decoration: underline; }
+  </style>
 </head>
 
 <body class="antialiased">
 <div id="particles-js"></div>
 
 <div class="flex h-screen">
-
-    <!-- 左侧栏 -->
-    <aside class="sidebar w-64 hidden md:block">
-        <div class="p-4 border-b text-center font-bold text-lg">
-            校园备忘录
-        </div>
-
-        <div class="p-4">
-            <!-- JWT 登录态区域 -->
-            <div id="auth-panel" class="mb-6 text-center"></div>
-
-            <!-- 日历 -->
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">活动日历</h3>
-                <div id="calendar-container" class="text-sm text-gray-500">
-                    日历加载中…
-                </div>
-            </div>
-
-            <!-- 团队 -->
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">我的团队</h3>
-                <div id="team-list" class="text-sm text-gray-500">
-                    暂无团队
-                </div>
-            </div>
-
-            <!-- 地图兜底 -->
-            <div id="baidu-map" class="text-sm text-gray-500">
-                地图功能暂不可用
-            </div>
-        </div>
-    </aside>
-
-    <!-- 主内容 -->
-    <main class="flex-1 overflow-auto">
-  <div class="max-w-3xl mx-auto p-6">
-
-    <!-- 发布 -->
-    <div class="post-card p-4 mb-6" id="publish-card">
-      <div class="flex items-center mb-3">
-        <div class="comment-avatar rounded-full mr-3"></div>
-        <div class="font-medium">发布新备忘</div>
+  <aside class="sidebar w-64 hidden md:block">
+    <div class="p-4 border-b text-center font-bold text-lg">校园备忘录</div>
+    <div class="p-4">
+      <div id="auth-panel" class="mb-6 text-center"></div>
+      <div class="mb-6">
+        <h3 class="font-semibold mb-2">活动日历</h3>
+        <div id="calendar-container" class="text-sm text-gray-500" style="height: 240px;">日历加载中…</div>
       </div>
-
-      <textarea
-        id="post-content"
-        class="w-full border rounded p-2 mb-3"
-        placeholder="记录你的学习 / 计划 / 想法…"
-        rows="4"
-      ></textarea>
-
-      <div class="flex items-center justify-between gap-3">
-        <input
-          id="post-tags"
-          class="flex-1 border rounded p-2 text-sm"
-          placeholder="#添加话题（可选，支持 空格/逗号 分隔）"
-        />
-        <button id="publish-btn" class="bg-black text-white px-4 py-2 rounded">
-          发布
-        </button>
+      <div class="mb-6">
+        <h3 class="font-semibold mb-2">我的团队</h3>
+        <div id="team-list" class="text-sm text-gray-500">暂无团队</div>
       </div>
+      <div id="baidu-map" class="text-sm text-gray-500">地图功能暂不可用</div>
     </div>
+  </aside>
 
-    <!-- 动态流容器：后端帖子渲染到这里 -->
-    <div id="memo-feed"></div>
+  <main class="flex-1 overflow-auto">
+    <div class="max-w-3xl mx-auto p-6">
 
-  </div>
-</main>
+      <!-- 发布 -->
+      <div class="post-card p-4 mb-6" id="publish-card">
+        <div class="flex items-center mb-3">
+          <div class="comment-avatar rounded-full mr-3"></div>
+          <div class="font-medium">发布新备忘</div>
+        </div>
 
+        <div class="flex items-center gap-3 mb-3">
+          <label class="text-sm text-gray-600">类型</label>
+          <select id="post-type" class="border rounded px-2 py-1 text-sm">
+            <option value="text" selected>普通帖子</option>
+            <option value="checklist">清单（代办列表）</option>
+          </select>
+          <span class="text-xs text-gray-400 ml-auto">清单可逐条划掉；文件支持图片/附件</span>
+        </div>
+
+        <textarea id="post-content" class="w-full border rounded p-2 mb-3"
+          placeholder="普通帖：这里写内容；清单帖：这里可写标题" rows="3"></textarea>
+
+        <!-- 清单编辑器 -->
+        <div id="checklist-editor" class="border rounded p-3 mb-3 hidden">
+          <div class="text-sm text-gray-600 mb-2">清单项（回车添加，点击删除）</div>
+          <div class="flex gap-2 mb-2">
+            <input id="checklist-input" class="flex-1 border rounded px-2 py-1 text-sm" placeholder="输入一条待办，回车添加" />
+            <button id="checklist-add" class="px-3 py-1 bg-black text-white rounded text-sm" type="button">添加</button>
+          </div>
+          <div id="checklist-container" class="flex flex-col gap-2"></div>
+        </div>
+
+        <!-- 标签 + 发布 -->
+        <div class="mb-3">
+          <div class="flex items-center justify-between gap-3">
+            <input id="tag-input" class="flex-1 border rounded p-2 text-sm" placeholder="#添加话题（回车/空格/逗号 生成标签）" />
+            <button id="publish-btn" class="bg-black text-white px-4 py-2 rounded" type="button">发布</button>
+          </div>
+          <div id="tags-container" class="mt-2 flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- 文件：图片 + 附件 -->
+        <div class="border rounded p-3 mb-3">
+          <div class="text-sm text-gray-600 mb-2">图片/附件（可选，最多 10 个，单个 ≤20MB）</div>
+          <input id="post-files" type="file" multiple class="text-sm" />
+          <div id="file-preview" class="mt-3"></div>
+        </div>
+
+        <!-- 代码块 -->
+        <div class="border rounded p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="text-sm text-gray-600">代码块（可选）</div>
+            <select id="code-lang" class="border rounded px-2 py-1 text-sm">
+              <option value="">自动</option>
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="sql">SQL</option>
+              <option value="bash">Bash</option>
+              <option value="json">JSON</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+            </select>
+          </div>
+          <textarea id="code-text" class="w-full border rounded p-2 text-sm" rows="5" placeholder="粘贴代码（发布后自动高亮显示）"></textarea>
+        </div>
+      </div>
+
+      <div id="memo-feed"></div>
+    </div>
+  </main>
 </div>
 
-<!-- 本地化 JS（顺序很重要） -->
 <script src="vendor/particles.min.js"></script>
-<script src="js/api.js"></script>
+<script src="vendor/echarts.min.js"></script>
 
+<script src="js/api.js"></script>
 <script src="js/app.js"></script>
 <script src="js/calendar.js"></script>
 <script src="js/team.js"></script>
@@ -129,49 +134,41 @@
 <script src="js/theme-switcher.js"></script>
 <script src="comment-system.js"></script>
 
-<!-- 粒子背景（可删，不影响功能） -->
-<script>
-if (window.particlesJS) {
-    particlesJS("particles-js", {
-        particles: {
-            number: { value: 30 },
-            size: { value: 3 },
-            line_linked: { enable: true }
-        }
-    });
-}
-</script>
+<!-- ✅ highlight.js（把文件放到 vendor） -->
+<script src="vendor/highlight.min.js"></script>
 
-<!-- JWT 登录态控制 -->
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-    const panel = document.getElementById("auth-panel");
+  const panel = document.getElementById("auth-panel");
 
-    if (!window.API || !API.getAccessToken()) {
-        location.href = "login.html";
-        return;
-    }
+  if (!window.API || !API.getAccessToken()) {
+    location.href = "login.html";
+    return;
+  }
 
-    try {
-        const me = await API.fetchMe();
-        panel.innerHTML = `
-            <div>
-                <div class="w-12 h-12 rounded-full bg-gray-300 mx-auto mb-2"></div>
-                <div class="font-medium">${me.username}</div>
-                <div class="text-xs text-gray-500 mb-2">${me.email}</div>
-                <button id="logoutBtn" class="text-sm text-red-500">退出登录</button>
-            </div>
-        `;
-        document.getElementById("logoutBtn").onclick = () => {
-            API.logoutLocal();
-            location.href = "login.html";
-        };
-    } catch {
-        API.logoutLocal();
-        location.href = "login.html";
-    }
+  try {
+    const me = await API.fetchMe();
+
+    panel.innerHTML = `
+      <div>
+        <div class="w-12 h-12 rounded-full bg-gray-300 mx-auto mb-2"></div>
+        <div class="font-medium">${me.username || "用户"}</div>
+        <div class="text-xs text-gray-500 mb-2">${me.email || ""}</div>
+        <button id="logoutBtn" class="text-sm text-red-500">退出登录</button>
+      </div>
+    `;
+
+    document.getElementById("logoutBtn").onclick = async () => {
+      await API.logout();
+      location.href = "login.html";
+    };
+
+    if (window.initApp) window.initApp();
+  } catch (err) {
+    API.clearTokens();
+    location.href = "login.html";
+  }
 });
 </script>
-
 </body>
 </html>

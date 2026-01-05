@@ -49,9 +49,8 @@
   <script src="js/api.js"></script>
   <script>
     (function () {
-      // 已登录则直接跳首页
-      if (window.API.getAccessToken()) {
-        window.location.href = "index.html";
+      if (!window.API || !API.apiFetch) {
+        console.error("API 未加载：请确认先引入 js/api.js");
         return;
       }
 
@@ -63,6 +62,23 @@
         msg.textContent = text || "";
         msg.className = ok ? "text-sm text-green-600" : "text-sm text-red-600";
       }
+
+      async function redirectIfAlreadyLoggedIn() {
+        const token = API.getAccessToken && API.getAccessToken();
+        if (!token) return;
+
+        try {
+          // 用真实接口校验 token，避免本地残留导致假登录
+          await API.fetchMe();
+          window.location.href = "index.html";
+        } catch (_) {
+          // token 无效/过期：清理后停留在登录页
+          if (API.clearTokens) API.clearTokens();
+        }
+      }
+
+      // 页面加载先判断一次
+      redirectIfAlreadyLoggedIn();
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -81,7 +97,7 @@
         btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> 登录中...';
 
         try {
-          const data = await API.loginByEmail(email, password);
+          await API.loginByEmail(email, password);
           setMsg("登录成功，正在跳转…", true);
           window.location.href = "index.html";
         } catch (err) {

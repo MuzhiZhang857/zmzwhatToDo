@@ -1,176 +1,240 @@
+// frontend/js/calendar.js
+// 当前月热力图 + 总体/done切换 + tooltip 不出屏
+// 依赖：vendor/echarts.min.js、js/api.js（window.API.apiFetch）
+// 容器：#calendar-container
 
-// self_improvement_assistant/frontend/js/calendar.js
-/**
- * 日历热力图模块
- * 基于备忘录数据生成热力图显示
- */
+(function () {
+  if (!window.echarts) {
+    console.error("ECharts 未加载");
+    return;
+  }
+  if (!window.API || !API.apiFetch) {
+    console.error("API 未加载");
+    return;
+  }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化日历热力图
-    initCalendarHeatmap();
-});
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
 
-/**
- * 初始化日历热力图
- */
-function initCalendarHeatmap() {
-    // 获取日历容器
-    const calendarContainer = document.getElementById('calendar-container');
-    if (!calendarContainer) return;
+  function ymd(d) {
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
 
-    // 获取备忘录数据
-    const memos = JSON.parse(localStorage.getItem('memos')) || [];
-    
-    // 计算每日备忘录数量
-    const memoCountByDate = countMemosByDate(memos);
-    
-    // 生成日历热力图
-    renderCalendarHeatmap(calendarContainer, memoCountByDate);
-}
+  function ymdCn(s) {
+    const [y, m, d] = String(s).split("-");
+    return `${y}年${m}月${d}日`;
+  }
 
-/**
- * 按日期统计备忘录数量
- * @param {Array} memos 备忘录数组
- * @returns {Object} 日期为键，数量为值的对象
- */
-function countMemosByDate(memos) {
-    const countByDate = {};
-    
-    memos.forEach(memo => {
-        const date = new Date(memo.timestamp);
-        const dateStr = date.toISOString().split('T')[0];
-        
-        if (!countByDate[dateStr]) {
-            countByDate[dateStr] = 0;
-        }
-        countByDate[dateStr]++;
-    });
-    
-    return countByDate;
-}
+  function monthRange(now) {
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-based
+    const start = new Date(y, m, 1);
+    const end = new Date(y, m + 1, 0); // last day
+    return { start, end };
+  }
 
-/**
- * 渲染日历热力图
- * @param {HTMLElement} container 日历容器
- * @param {Object} memoCountByDate 每日备忘录数量统计
- */
-function renderCalendarHeatmap(container, memoCountByDate) {
-    // 清空容器
-    container.innerHTML = '';
-    
-    // 创建日历标题
-    const title = document.createElement('h4');
-    title.className = 'text-sm font-semibold mb-2';
-    title.textContent = '活动日历';
-    container.appendChild(title);
-    
-    // 创建日历网格容器
-    const grid = document.createElement('div');
-    grid.className = 'calendar-grid grid grid-cols-7 gap-1';
-    container.appendChild(grid);
-    
-    // 获取当前日期
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
-    // 获取当月第一天
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const firstDayOfWeek = firstDay.getDay(); // 0-6 (0是周日)
-    
-    // 获取当月天数
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
-    // 获取上个月天数
-    const daysInLastMonth = new Date(currentYear, currentMonth, 0).getDate();
-    
-    // 添加空白单元格（上个月的最后几天）
-    for (let i = 0; i < firstDayOfWeek; i++) {
-        const cell = createDayCell('empty', '');
-        grid.appendChild(cell);
+  async function fetchCalendarStats(from, to) {
+    const qs = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    return API.apiFetch(`/api/stats/calendar/${qs}`, { method: "GET" });
+  }
+
+  function buildMaps(activity, completion) {
+    const aMap = new Map();
+    const cMap = new Map();
+
+    (Array.isArray(activity) ? activity : []).forEach(([d, v]) => aMap.set(String(d), Number(v || 0)));
+    (Array.isArray(completion) ? completion : []).forEach(([d, v]) => cMap.set(String(d), Number(v || 0)));
+
+    return { aMap, cMap };
+  }
+
+  function computeMax(arr) {
+    const maxVal = arr.reduce((mx, it) => Math.max(mx, Number(it?.value?.[1] || 0)), 0);
+    return Math.max(10, maxVal);
+  }
+
+  function ensureToggleUI(container) {
+    // 插入 “总体 / done” 两个按钮（不改 HTML）
+    const wrap = document.createElement("div");
+    wrap.className = "flex items-center gap-2 mb-2";
+
+    const btnOverall = document.createElement("button");
+    btnOverall.type = "button";
+    btnOverall.id = "hm-overall";
+    btnOverall.className = "px-2 py-1 text-xs border rounded bg-black text-white";
+    btnOverall.textContent = "总览";
+
+    const btnDone = document.createElement("button");
+    btnDone.type = "button";
+    btnDone.id = "hm-done";
+    btnDone.className = "px-2 py-1 text-xs border rounded";
+    btnDone.textContent = "已完成";
+
+    wrap.appendChild(btnOverall);
+    wrap.appendChild(btnDone);
+
+    container.parentNode.insertBefore(wrap, container);
+    return { btnOverall, btnDone };
+  }
+
+  function buildOption({ rangeStart, rangeEnd, data, max }) {
+    return {
+      tooltip: {
+        trigger: "item",
+        position: function (pos, params, dom, rect, size) {
+          const viewWidth = size.viewSize[0];
+          const viewHeight = size.viewSize[1];
+          const boxWidth = size.contentSize[0];
+          const boxHeight = size.contentSize[1];
+
+          let x = pos[0] + 12;
+          let y = pos[1] + 12;
+
+          if (x + boxWidth > viewWidth) x = pos[0] - boxWidth - 12;
+          if (y + boxHeight > viewHeight) y = pos[1] - boxHeight - 12;
+
+          x = Math.max(8, x);
+          y = Math.max(8, y);
+          return [x, y];
+        },
+        formatter: function (p) {
+          const d = p?.data?.value?.[0] || "";
+          const overall = Number(p?.data?.overall || 0);
+          const done = Number(p?.data?.done || 0);
+          return `${ymdCn(d)}<br/>发帖：${overall}<br/>完成：${done}`;
+        },
+      },
+
+      visualMap: {
+        min: 0,
+        max,
+        orient: "horizontal",
+        left: "center",
+        bottom: 0,
+        calculable: true,
+      },
+
+      calendar: {
+        range: [ymd(rangeStart), ymd(rangeEnd)],
+        cellSize: [16, 16],
+        left: 10,
+        right: 10,
+        top: 6,
+        bottom: 28,
+
+        dayLabel: { show: false },
+        monthLabel: { show: false },
+        yearLabel: { show: false },
+
+        splitLine: { show: true },
+        itemStyle: { borderWidth: 1 },
+      },
+
+      series: [
+        {
+          type: "heatmap",
+          coordinateSystem: "calendar",
+          data,
+        },
+      ],
+    };
+  }
+
+  async function initCalendar() {
+    const el = document.getElementById("calendar-container");
+    if (!el) return;
+
+    el.innerHTML = "";
+    el.style.height = "220px";
+
+    const now = new Date();
+    const { start, end } = monthRange(now);
+    const from = ymd(start);
+    const to = ymd(end);
+
+    let stats;
+    try {
+      stats = await fetchCalendarStats(from, to);
+    } catch (err) {
+      el.innerHTML = `<div class="text-xs text-red-500">日历加载失败：${(err && err.message) || "未知错误"}</div>`;
+      return;
     }
-    
-    // 添加当月日期单元格
-    for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(currentYear, currentMonth, day);
-        const dateStr = date.toISOString().split('T')[0];
-        const count = memoCountByDate[dateStr] || 0;
-        
-        // 确定颜色等级
-        let colorClass;
-        if (count === 0) {
-            colorClass = 'color-0';
-        } else if (count <= 2) {
-            colorClass = 'color-1';
-        } else if (count <= 4) {
-            colorClass = 'color-2';
-        } else if (count <= 6) {
-            colorClass = 'color-3';
+
+    const { aMap, cMap } = buildMaps(stats.activity, stats.completion);
+
+    // 构造这个月每天的数据（无数据也填 0，保证格子齐全）
+    const dayDataOverall = [];
+    const dayDataDone = [];
+
+    const d = new Date(start.getTime());
+    while (d <= end) {
+      const key = ymd(d);
+      const overall = aMap.get(key) || 0;
+      const done = cMap.get(key) || 0;
+
+      dayDataOverall.push({
+        value: [key, overall], // 用 overall 做颜色
+        overall,
+        done,
+      });
+
+      dayDataDone.push({
+        value: [key, done], // 用 done 做颜色
+        overall,
+        done,
+      });
+
+      d.setDate(d.getDate() + 1);
+    }
+
+    const chart = echarts.init(el);
+
+    // 插入 toggle（避免重复插入）
+    if (!document.getElementById("hm-overall")) {
+      var btns = ensureToggleUI(el);
+    } else {
+      var btns = {
+        btnOverall: document.getElementById("hm-overall"),
+        btnDone: document.getElementById("hm-done"),
+      };
+    }
+
+    let mode = "overall";
+
+    function render() {
+      const data = mode === "overall" ? dayDataOverall : dayDataDone;
+      const max = computeMax(data);
+
+      if (btns.btnOverall && btns.btnDone) {
+        if (mode === "overall") {
+          btns.btnOverall.className = "px-2 py-1 text-xs border rounded bg-black text-white";
+          btns.btnDone.className = "px-2 py-1 text-xs border rounded";
         } else {
-            colorClass = 'color-4';
+          btns.btnOverall.className = "px-2 py-1 text-xs border rounded";
+          btns.btnDone.className = "px-2 py-1 text-xs border rounded bg-black text-white";
         }
-        
-        const cell = createDayCell(colorClass, day, count);
-        grid.appendChild(cell);
-    }
-    
-    // 计算总单元格数
-    const totalCells = firstDayOfWeek + daysInMonth;
-    const remainingCells = 42 - totalCells; // 6行x7列=42单元格
-    
-    // 添加空白单元格（下个月的前几天）
-    for (let i = 0; i < remainingCells; i++) {
-        const cell = createDayCell('empty', '');
-        grid.appendChild(cell);
-    }
-    
-    // 添加图例
-    const legend = document.createElement('div');
-    legend.className = 'flex justify-between mt-2 text-xs text-gray-500';
-    legend.innerHTML = `
-        <span>少</span>
-        <div class="flex space-x-1">
-            <div class="w-3 h-3 rounded-sm color-1"></div>
-            <div class="w-3 h-3 rounded-sm color-2"></div>
-            <div class="w-3 h-3 rounded-sm color-3"></div>
-            <div class="w-3 h-3 rounded-sm color-4"></div>
-        </div>
-        <span>多</span>
-    `;
-    container.appendChild(legend);
-}
+      }
 
-/**
- * 创建日期单元格
- * @param {String} colorClass 颜色类名
- * @param {Number|String} day 日期
- * @param {Number} count 备忘录数量
- * @returns {HTMLElement} 日期单元格元素
- */
-function createDayCell(colorClass, day, count = 0) {
-    const cell = document.createElement('div');
-    cell.className = `day-cell ${colorClass} flex items-center justify-center text-xs rounded-sm`;
-    
-    if (colorClass !== 'empty') {
-        cell.title = `${day}日: ${count}条备忘录`;
-        cell.innerHTML = day;
-        
-        // 添加悬停效果
-        cell.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.1)';
-            this.style.zIndex = '10';
-            this.style.boxShadow = '0 0 5px rgba(0,0,0,0.2)';
-        });
-        
-        cell.addEventListener('mouseleave', function() {
-            this.style.transform = '';
-            this.style.zIndex = '';
-            this.style.boxShadow = '';
-        });
+      chart.setOption(buildOption({ rangeStart: start, rangeEnd: end, data, max }), true);
     }
-    
-    return cell;
-}
 
-// 导出函数供其他模块使用
-window.initCalendarHeatmap = initCalendarHeatmap;
+    if (btns.btnOverall) {
+      btns.btnOverall.onclick = () => {
+        mode = "overall";
+        render();
+      };
+    }
+    if (btns.btnDone) {
+      btns.btnDone.onclick = () => {
+        mode = "done";
+        render();
+      };
+    }
+
+    render();
+    window.addEventListener("resize", () => chart.resize());
+  }
+
+  window.initCalendar = initCalendar;
+})();

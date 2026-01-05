@@ -1,74 +1,133 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import (
-    IsAuthenticated,
-    AllowAny,
-    IsAuthenticatedOrReadOnly,
-)
-# 合并导入，包含你需要的全部字段
-from django.db.models import Count, Exists, OuterRef, Value, BooleanField
-from django.db import IntegrityError
+import json
 
-from .models import Post, PostComment, PostLike
+from django.db import IntegrityError
+from django.db.models import Count, Exists, OuterRef, Value, BooleanField
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
+
+from rest_framework import status
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Post, PostComment, PostLike, PostAttachment
 from .serializers import PostSerializer, CommentSerializer
+from .validators import validate_upload
+
+
+MAX_FILES_PER_POST = 10
+MAX_SINGLE_FILE_BYTES = 20 * 1024 * 1024  # 20MB
+
+
+def parse_json_maybe(v, default):
+    if v is None:
+        return default
+    if isinstance(v, (dict, list)):
+        return v
+    if isinstance(v, str):
+        s = v.strip()
+        if not s:
+            return default
+        try:
+            return json.loads(s)
+        except Exception:
+            return default
+    return default
+
 
 class PostListCreateAPIView(APIView):
-    """
-    GET  /api/posts/        获取动态流（公开）- 包含 like_count & liked_by_me
-    POST /api/posts/        发布新备忘（需JWT）
-    """
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        # 提前判断用户是否登录，避免在 queryset 里重复判断
         user = request.user if request.user.is_authenticated else None
-
-        base_qs = Post.objects.select_related("author").all()
+        base_qs = (
+            Post.objects.select_related("author")
+            .prefetch_related("attachments")
+            .all()
+            .order_by("-created_at")
+        )
 
         if user:
             qs = base_qs.annotate(
                 like_count=Count("likes", distinct=True),
-                liked_by_me=Exists(
-                    PostLike.objects.filter(
-                        post_id=OuterRef("pk"),
-                        user_id=user.id
-                    )
-                ),
+                liked_by_me=Exists(PostLike.objects.filter(post_id=OuterRef("pk"), user_id=user.id)),
+                comment_count=Count("comments", distinct=True),  # ✅ 新增
             )
         else:
             qs = base_qs.annotate(
                 like_count=Count("likes", distinct=True),
-                liked_by_me=Value(False, output_field=models.BooleanField()),
+                liked_by_me=Value(False, output_field=BooleanField()),
+                comment_count=Count("comments", distinct=True),  # ✅ 新增
             )
 
-        serializer = PostSerializer(qs, many=True)
-        return Response(serializer.data)
+        return Response(PostSerializer(qs, many=True, context={"request": request}).data)
 
     def post(self, request):
-        content = (request.data.get("content") or "").strip()
-        tags = (request.data.get("tags") or "").strip()
+        # 1) files
+        files = request.FILES.getlist("files")
+        has_files = bool(files)
 
-        if not content:
-            return Response({"message": "内容不能为空"}, status=status.HTTP_400_BAD_REQUEST)
+        # 2) ✅ 关键：multipart 下 request.data 可能是 QueryDict，转成普通 dict
+        raw = request.data
+        data = {k: raw.get(k) for k in raw.keys()}
+
+        # 3) multipart 时 meta/checklist_items 可能是字符串 JSON
+        data["meta"] = parse_json_maybe(data.get("meta"), {})
+        data["checklist_items"] = parse_json_maybe(data.get("checklist_items"), [])
+
+        # 4) 附件限制：数量 / 大小 / 类型（白名单 + 拒绝可执行）
+        if files:
+            if len(files) > MAX_FILES_PER_POST:
+                raise ValidationError({"attachments": [f"附件最多 {MAX_FILES_PER_POST} 个"]})
+
+            for f in files:
+                if f.size > MAX_SINGLE_FILE_BYTES:
+                    raise ValidationError(
+                        {"attachments": [f"单个文件不能超过 {MAX_SINGLE_FILE_BYTES // (1024 * 1024)}MB"]}
+                    )
+
+                try:
+                    validate_upload(f)
+                except ValueError as e:
+                    raise ValidationError({"attachments": [str(e)]})
+
+        # 5) 校验帖子主体（允许只发文件/只发代码，但禁止完全空）
+        ser = PostSerializer(data=data, context={"has_files": has_files})
+        ser.is_valid(raise_exception=True)
 
         post = Post.objects.create(
             author=request.user,
-            content=content,
-            tags=tags,
+            type=ser.validated_data.get("type", Post.TYPE_TEXT),
+            content=ser.validated_data.get("content", ""),
+            tags=ser.validated_data.get("tags", ""),
+            meta=ser.validated_data.get("meta", {}),
+            checklist_items=ser.validated_data.get("checklist_items", []),
         )
 
-        # 为新建的帖子手动补齐前端期望的字段，保持列表和创建返回格式一致
-        post.like_count = 0
-        post.liked_by_me = True  # 因为是自己发的，可以视为已“喜欢”（可选：也可设为 False 看产品需求）
+        # 6) 保存附件（已校验，安全落库）
+        if files:
+            for f in files:
+                PostAttachment.objects.create(
+                    post=post,
+                    file=f,
+                    original_name=getattr(f, "name", ""),
+                    content_type=getattr(f, "content_type", "") or "",
+                    size=getattr(f, "size", 0) or 0,
+                )
 
-        return Response(PostSerializer(post).data, status=status.HTTP_201_CREATED)
+        # 7) 返回序列化：让前端无需二次请求也有 like/comment 信息
+        post.like_count = 0
+        post.liked_by_me = False
+        post.comment_count = 0  # ✅ 新增
+
+        return Response(
+            PostSerializer(post, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CommentListAPIView(APIView):
-    """
-    GET /api/posts/<post_id>/comments/   获取某帖评论（公开）
-    """
     permission_classes = [AllowAny]
 
     def get(self, request, post_id: int):
@@ -77,71 +136,98 @@ class CommentListAPIView(APIView):
 
 
 class CommentCreateAPIView(APIView):
-    """
-    POST /api/posts/<post_id>/comments/  发表评论（需JWT）
-    body: {content}
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, post_id: int):
         content = (request.data.get("content") or "").strip()
         if not content:
-            return Response({"message": "评论内容不能为空"}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"content": ["评论内容不能为空"]})
 
         try:
             Post.objects.only("id").get(id=post_id)
         except Post.DoesNotExist:
-            return Response({"message": "帖子不存在"}, status=status.HTTP_404_NOT_FOUND)
+            raise Http404("帖子不存在")
 
-        comment = PostComment.objects.create(
-            post_id=post_id,
-            author=request.user,
-            content=content,
-        )
+        comment = PostComment.objects.create(post_id=post_id, author=request.user, content=content)
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
 
 class PostLikeToggleAPIView(APIView):
-    """
-    POST /api/posts/<post_id>/like-toggle/   点赞/取消点赞（需登录）
-    返回: { "post_id": , "liked": bool, "like_count": int }
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, post_id: int):
-        # 验证帖子存在
         try:
             Post.objects.only("id").get(id=post_id)
         except Post.DoesNotExist:
-            return Response({"message": "帖子不存在"}, status=status.HTTP_404_NOT_FOUND)
+            raise Http404("帖子不存在")
 
-        # 尝试查找是否已点赞
-        existing_like = PostLike.objects.filter(
-            post_id=post_id,
-            user_id=request.user.id
-        ).first()
+        existing_like = PostLike.objects.filter(post_id=post_id, user_id=request.user.id).first()
 
         if existing_like:
-            # 已赞 → 取消
             existing_like.delete()
             liked = False
         else:
-            # 未赞 → 创建
             try:
-                PostLike.objects.create(
-                    post_id=post_id,
-                    user_id=request.user.id
-                )
+                PostLike.objects.create(post_id=post_id, user_id=request.user.id)
                 liked = True
             except IntegrityError:
-                # 极少见的高并发重复创建情况，视为已赞
                 liked = True
 
-        # 重新计算真实的点赞数
         like_count = PostLike.objects.filter(post_id=post_id).count()
+        return Response({"post_id": post_id, "liked": liked, "like_count": like_count})
 
-        return Response({
-            "post_id": post_id,
-            "liked": liked,
-            "like_count": like_count
-        }, status=status.HTTP_200_OK)
+
+class ChecklistToggleAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, post_id: int):
+        post = get_object_or_404(Post, id=post_id)
+
+        if post.author_id != request.user.id:
+            raise PermissionDenied("无权限")
+
+        if post.type != Post.TYPE_CHECKLIST:
+            raise ValidationError({"type": ["该帖子不是清单类型"]})
+
+        idx = request.data.get("index", None)
+        try:
+            idx = int(idx)
+        except Exception:
+            raise ValidationError({"index": ["index 非法"]})
+
+        items = post.checklist_items or []
+        if idx < 0 or idx >= len(items):
+            raise ValidationError({"index": ["index 越界"]})
+
+        items[idx]["done"] = not bool(items[idx].get("done", False))
+        post.checklist_items = items
+        post.save(update_fields=["checklist_items"])
+
+        return Response({"checklist_items": post.checklist_items})
+
+
+class AttachmentDownloadAPIView(APIView):
+    """
+    受控下载接口：避免 /media/ 直出导致隐私泄露。
+    当前策略：仅帖子作者可下载。
+    未来做 Team 权限时，在此扩展“团队成员可下载”。
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, attachment_id: int):
+        att = (
+            PostAttachment.objects.select_related("post", "post__author")
+            .filter(id=attachment_id)
+            .first()
+        )
+        if not att:
+            raise Http404("附件不存在")
+
+        if att.post.author_id != request.user.id:
+            raise PermissionDenied("无权下载该附件")
+
+        resp = FileResponse(att.file.open("rb"), as_attachment=True, filename=att.original_name)
+        resp["X-Content-Type-Options"] = "nosniff"
+        if att.content_type:
+            resp["Content-Type"] = att.content_type
+        return resp
