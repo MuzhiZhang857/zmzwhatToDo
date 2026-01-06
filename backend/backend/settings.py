@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "posts",
     "todos",
     "stats",
+    'teams',
 ]
 
 # ======================
@@ -166,3 +167,5 @@ CSRF_TRUSTED_ORIGINS = [
 
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+
+FRONTEND_URL = "http://localhost:5500"

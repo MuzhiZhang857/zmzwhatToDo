@@ -16,6 +16,20 @@
     --text-color: #212121;
     --card-bg: #ffffff;
     --border-color: #e0e0e0;
+
+    /* Memos-like tokens */
+     --radius-sm: 6px;
+     --radius-md: 10px;
+     --radius-lg: 14px;
+
+     --border-subtle: #e5e7eb;
+     --bg-soft: #f8fafc;
+
+     --text-main: #111827;
+     --text-muted: #6b7280;
+
+     --card-padding: 1rem;
+
 }
 
 [data-theme="dark"] {
@@ -211,6 +225,12 @@ body {
 .theme-toggle-btn:hover {
     transform: scale(1.1);
 }
+
+.memo-composer {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-soft);
+}
+
 
 /* 响应式调整 */
 @media (max-width: 768px) {

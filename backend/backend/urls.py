@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/posts/', include('posts.urls')),
     path('api/todos/', include('todos.urls')),
     path("api/stats/", include("stats.urls")),
+    path('api/teams/', include('teams.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

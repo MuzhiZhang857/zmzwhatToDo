@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/all.min.css">
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- ✅ 代码高亮主题（把文件放到 vendor） -->
+  <script src="vendor/qrcode.min.js"></script>
   <link rel="stylesheet" href="vendor/github.min.css">
 
   <style>
@@ -34,26 +34,188 @@
 <div id="particles-js"></div>
 
 <div class="flex h-screen">
-  <aside class="sidebar w-64 hidden md:block">
-    <div class="p-4 border-b text-center font-bold text-lg">校园备忘录</div>
-    <div class="p-4">
-      <div id="auth-panel" class="mb-6 text-center"></div>
-      <div class="mb-6">
-        <h3 class="font-semibold mb-2">活动日历</h3>
-        <div id="calendar-container" class="text-sm text-gray-500" style="height: 240px;">日历加载中…</div>
+
+  <!-- 左侧两栏 Sidebar -->
+  <aside class="sidebar hidden md:flex h-screen">
+    <!-- Icon Rail -->
+    <div class="w-16 border-r flex flex-col items-center py-4 gap-3">
+      <div class="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold select-none">
+        M
       </div>
-      <div class="mb-6">
-        <h3 class="font-semibold mb-2">我的团队</h3>
-        <div id="team-list" class="text-sm text-gray-500">暂无团队</div>
+
+      <button onclick="showHomeSection()"
+              class="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 transition"
+              title="首页广场" aria-label="首页广场">
+        <i class="fas fa-home text-blue-600"></i>
+      </button>
+
+      <button onclick="showTeamSection()"
+              class="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 transition"
+              title="我的团队" aria-label="我的团队">
+        <i class="fas fa-users text-green-600"></i>
+      </button>
+
+      <div class="flex-1"></div>
+
+      <button class="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 transition"
+              title="设置" aria-label="设置">
+        <i class="fas fa-cog text-gray-500"></i>
+      </button>
+    </div>
+
+    <!-- Content Panel -->
+    <div class="w-64 flex flex-col">
+      <div class="px-4 py-4 border-b">
+        <div class="text-base font-bold leading-tight">校园备忘录</div>
+        <div class="text-xs text-gray-500 mt-1">打卡 · 分享 · 协作</div>
       </div>
-      <div id="baidu-map" class="text-sm text-gray-500">地图功能暂不可用</div>
+
+      <div class="flex-1 overflow-auto px-4 py-4 space-y-6">
+        <div id="auth-panel" class="text-center"></div>
+
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">活动日历</h3>
+          <div id="calendar-container" class="text-sm text-gray-500" style="height: 240px;">日历加载中…</div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">地图</h3>
+          <div id="baidu-map" class="text-sm text-gray-500">地图功能暂不可用</div>
+        </div>
+      </div>
     </div>
   </aside>
 
+  <!-- Main -->
   <main class="flex-1 overflow-auto">
     <div class="max-w-3xl mx-auto p-6">
 
-      <!-- 发布 -->
+      <!-- 团队中心 -->
+      <div id="team-section" class="hidden animate-fade-in">
+
+        <!-- 顶部：团队协作中心头部 -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border mb-6 flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800">团队协作中心</h2>
+            <p class="text-sm text-gray-500">创建小组，实时共享学习进度与任务</p>
+          </div>
+          <div class="space-x-2">
+            <button onclick="openModal('modal-create-team')"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition hover:bg-blue-700">
+              <i class="fas fa-plus mr-1"></i> 创建团队
+            </button>
+            <button onclick="openModal('modal-join-team')"
+                    class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition hover:bg-green-700">
+              <i class="fas fa-sign-in-alt mr-1"></i> 加入团队
+            </button>
+          </div>
+        </div>
+
+        <!-- 主栏 + 右侧栏 -->
+        <div class="grid grid-cols-12 gap-6">
+
+          <!-- 主栏 -->
+          <div class="col-span-12 lg:col-span-8 space-y-6">
+            <!-- 唯一发布器挂载位（由 app.js 把 #publish-card 移进来） -->
+            <div id="team-composer-slot"></div>
+
+            <!-- 未选择团队提示 -->
+            <div id="team-welcome-msg"
+                 class="bg-white border-2 border-dashed border-gray-200 rounded-xl p-16 text-center text-gray-400">
+              <i class="fas fa-users text-5xl mb-4 opacity-20"></i>
+              <p>请在右侧选择一个团队开启协作</p>
+            </div>
+
+            <!-- 选择团队后：团队详情（注意：主栏不再显示团队信息/二维码） -->
+            <div id="team-detail-section" class="hidden space-y-6">
+
+              <!-- 团队发布（保留不删；如果你只用唯一发布器，可在 app.js 里隐藏此卡） -->
+              <div class="post-card p-4">
+                <form id="team-post-form">
+                  <input type="text" id="team-post-title" placeholder="话题标题..."
+                         class="w-full mb-2 p-2 border-b focus:outline-none focus:border-gray-400" required>
+                  <textarea id="team-post-content" rows="3" placeholder="在团队内分享点什么..."
+                            class="w-full p-2 text-sm focus:outline-none resize-none" required></textarea>
+                  <div class="flex justify-end mt-2">
+                    <button type="submit"
+                            class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">
+                      发布
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- 团队帖子流 -->
+              <div id="team-posts-container" class="space-y-4"></div>
+            </div>
+          </div>
+
+          <!-- 右侧栏 -->
+          <div class="col-span-12 lg:col-span-4 space-y-6">
+
+            <!-- 我的团队列表 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border">
+              <h4 class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-widest">我的团队列表</h4>
+              <div id="team-list-container" class="space-y-3"></div>
+            </div>
+
+            <!-- 侧栏团队信息卡（唯一展示团队信息 + 二维码） -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border flex items-center justify-between">
+              <div>
+                <h2 id="team-side-name" class="text-lg font-bold text-gray-800">未选择团队</h2>
+
+                <div class="mt-2 flex items-center gap-3">
+                  <span class="text-xs text-gray-500">
+                    邀请码: <b id="team-side-invite" class="text-blue-600 font-mono">—</b>
+                  </span>
+
+                  <button id="team-side-copy" type="button"
+                          class="text-xs text-blue-500 hover:underline">
+                    复制链接
+                  </button>
+                </div>
+
+                <div id="team-side-sub" class="text-xs text-gray-400 mt-1">请先从上方列表选择</div>
+              </div>
+
+              <canvas id="team-side-qr-canvas"
+                      class="w-16 h-16 border p-1 rounded bg-white shadow-sm"></canvas>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Modals -->
+      <div id="modal-create-team" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-96 shadow-2xl">
+          <h3 class="font-bold text-lg mb-4">创建新团队</h3>
+          <form id="create-team-form" class="space-y-4">
+            <input type="text" id="new-team-name" placeholder="团队名称" class="w-full border p-2 rounded-lg" required>
+            <textarea id="new-team-desc" placeholder="描述你的团队..." class="w-full border p-2 rounded-lg" rows="3"></textarea>
+            <div class="flex justify-end gap-2">
+              <button type="button" onclick="closeModal('modal-create-team')" class="px-4 py-2 text-gray-500">取消</button>
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">立即创建</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="modal-join-team" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-80 shadow-2xl">
+          <h3 class="font-bold text-lg mb-4">加入新团队</h3>
+          <form id="join-team-form" class="space-y-4">
+            <input type="text" id="join-invite-code" placeholder="请输入8位邀请码"
+                   class="w-full border p-2 rounded-lg text-center font-mono text-lg uppercase" maxlength="8" required>
+            <div class="flex justify-end gap-2">
+              <button type="button" onclick="closeModal('modal-join-team')" class="px-4 py-2 text-gray-500">取消</button>
+              <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg">验证并加入</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 通用发布器（唯一实例；由 app.js 在首页/团队页之间移动） -->
       <div class="post-card p-4 mb-6" id="publish-card">
         <div class="flex items-center mb-3">
           <div class="comment-avatar rounded-full mr-3"></div>
@@ -70,9 +232,8 @@
         </div>
 
         <textarea id="post-content" class="w-full border rounded p-2 mb-3"
-          placeholder="普通帖：这里写内容；清单帖：这里可写标题" rows="3"></textarea>
+                  placeholder="普通帖：这里写内容；清单帖：这里可写标题" rows="3"></textarea>
 
-        <!-- 清单编辑器 -->
         <div id="checklist-editor" class="border rounded p-3 mb-3 hidden">
           <div class="text-sm text-gray-600 mb-2">清单项（回车添加，点击删除）</div>
           <div class="flex gap-2 mb-2">
@@ -82,7 +243,6 @@
           <div id="checklist-container" class="flex flex-col gap-2"></div>
         </div>
 
-        <!-- 标签 + 发布 -->
         <div class="mb-3">
           <div class="flex items-center justify-between gap-3">
             <input id="tag-input" class="flex-1 border rounded p-2 text-sm" placeholder="#添加话题（回车/空格/逗号 生成标签）" />
@@ -91,14 +251,12 @@
           <div id="tags-container" class="mt-2 flex flex-wrap gap-2"></div>
         </div>
 
-        <!-- 文件：图片 + 附件 -->
         <div class="border rounded p-3 mb-3">
           <div class="text-sm text-gray-600 mb-2">图片/附件（可选，最多 10 个，单个 ≤20MB）</div>
           <input id="post-files" type="file" multiple class="text-sm" />
           <div id="file-preview" class="mt-3"></div>
         </div>
 
-        <!-- 代码块 -->
         <div class="border rounded p-3">
           <div class="flex items-center gap-2 mb-2">
             <div class="text-sm text-gray-600">代码块（可选）</div>
@@ -114,11 +272,14 @@
               <option value="css">CSS</option>
             </select>
           </div>
-          <textarea id="code-text" class="w-full border rounded p-2 text-sm" rows="5" placeholder="粘贴代码（发布后自动高亮显示）"></textarea>
+          <textarea id="code-text" class="w-full border rounded p-2 text-sm" rows="5"
+                    placeholder="粘贴代码（发布后自动高亮显示）"></textarea>
         </div>
       </div>
 
+      <!-- Feed -->
       <div id="memo-feed"></div>
+
     </div>
   </main>
 </div>
@@ -134,7 +295,6 @@
 <script src="js/theme-switcher.js"></script>
 <script src="comment-system.js"></script>
 
-<!-- ✅ highlight.js（把文件放到 vendor） -->
 <script src="vendor/highlight.min.js"></script>
 
 <script>
@@ -170,5 +330,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 </script>
+
+<script>
+  // Modal helpers（全局）
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.error("openModal: 未找到元素", id);
+      return;
+    }
+    el.classList.remove("hidden");
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.error("closeModal: 未找到元素", id);
+      return;
+    }
+    el.classList.add("hidden");
+  }
+
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+</script>
+
 </body>
 </html>

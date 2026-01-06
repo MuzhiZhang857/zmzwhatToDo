@@ -5,6 +5,10 @@
     return;
   }
 
+window.__postScope = {
+  type: "public", // public | team
+  teamId: null
+};
   function escapeHtml(s) {
     return (s || "")
       .replaceAll("&", "&amp;")
@@ -583,6 +587,12 @@
       publishBtn.addEventListener("click", async () => {
         const type = (document.getElementById("post-type")?.value || "text").trim();
         const content = (document.getElementById("post-content")?.value || "").trim();
+
+        if (window.__postScope?.type === "team" && !window.__postScope.teamId) {
+          alert("请先在团队中心选择一个团队，再发布。");
+          return;
+        }
+
         const code = (document.getElementById("code-text")?.value || "").trim();
         const codeLang = (document.getElementById("code-lang")?.value || "").trim();
 
@@ -610,7 +620,10 @@
 
         publishBtn.disabled = true;
         try {
+          
           const created = await API.apiFetch("/api/posts/", { method: "POST", body: fd });
+
+
 
           // 清空发布区
           const contentEl = document.getElementById("post-content");
@@ -659,3 +672,56 @@
     if (window.initCalendar) window.initCalendar();
   };
 })();
+
+/**
+ * 视图切换控制逻辑
+ * 处理 首页广场 与 团队中心 之间的显示隐藏
+ */
+function mountComposerIntoTeam() {
+  const composer = document.getElementById("publish-card");
+  const slot = document.getElementById("team-composer-slot");
+  if (composer && slot && !slot.contains(composer)) slot.appendChild(composer);
+}
+
+function mountComposerIntoHome() {
+  const composer = document.getElementById("publish-card");
+  const homeWrap = document.querySelector("main .max-w-3xl");
+  const feed = document.getElementById("memo-feed");
+  if (!composer || !homeWrap) return;
+
+  // 放在 feed 前（你也可以改成 afterend）
+  if (feed && !homeWrap.contains(composer)) homeWrap.insertBefore(composer, feed);
+}
+
+function showTeamSection() {
+  document.getElementById("team-section")?.classList.remove("hidden");
+  document.getElementById("memo-feed")?.classList.add("hidden");
+
+  // 🚫 不要在这里重置 teamId
+  window.__postScope = window.__postScope || { type: "public", teamId: null };
+  window.__postScope.type = "team";
+
+  // 发布器仍然显示
+  document.getElementById("publish-card")?.classList.remove("hidden");
+
+  // 只负责加载团队列表
+  window.TeamModule?.loadTeamList?.();
+}
+
+
+function showHomeSection() {
+  // 回到首页视图
+  document.getElementById("team-section")?.classList.add("hidden");
+  document.getElementById("memo-feed")?.classList.remove("hidden");
+
+  // ✅ 唯一发布器：移回首页
+  mountComposerIntoHome();
+  document.getElementById("publish-card")?.classList.remove("hidden");
+
+  window.__postScope = window.__postScope || { type: "public", teamId: null };
+  window.__postScope.type = "public";
+  window.__postScope.teamId = null;
+}
+
+window.showTeamSection = showTeamSection;
+window.showHomeSection = showHomeSection;
