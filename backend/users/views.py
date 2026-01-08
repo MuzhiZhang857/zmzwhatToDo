@@ -15,8 +15,6 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .utils import build_avatar_url
 
-from .utils import build_avatar_url
-
 User = get_user_model()
 PASSWORD_MIN_LENGTH = 6
 ADMIN_PAGE_SIZE = 10

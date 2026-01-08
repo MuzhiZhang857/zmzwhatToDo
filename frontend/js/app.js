@@ -51,16 +51,18 @@ window.__postScope = {
     return AVATAR_COLORS[index];
   }
 
-  function renderAvatar(user, extraClass = "") {
+  function renderAvatar(user, extraClass = "", forceFallback = false) {
     const name = user?.name || user?.username || user?.email || "";
     const email = user?.email || "";
-    const avatarUrl = user?.avatar_url || "";
+    const avatarUrl = forceFallback ? "" : user?.avatar_url || "";
     const className = `comment-avatar rounded-full ${extraClass}`.trim();
 
     if (avatarUrl) {
       return `<img class="${className} object-cover" src="${escapeHtml(
         avatarUrl
-      )}" alt="${escapeHtml(name || "avatar")}" />`;
+      )}" alt="${escapeHtml(name || "avatar")}" data-avatar-fallback="1" data-avatar-name="${escapeHtml(
+        name
+      )}" data-avatar-email="${escapeHtml(email)}" data-avatar-class="${escapeHtml(extraClass)}" />`;
     }
 
     const seed = name || email || "user";
@@ -69,6 +71,26 @@ window.__postScope = {
     return `<div class="${className}" style="background-color: ${color};">${escapeHtml(
       initial
     )}</div>`;
+  }
+
+  function bindAvatarFallbacks(container = document) {
+    container.querySelectorAll("img[data-avatar-fallback]").forEach((img) => {
+      if (img.dataset.avatarBound === "1") return;
+      img.dataset.avatarBound = "1";
+      img.addEventListener("error", () => {
+        const name = img.dataset.avatarName || "";
+        const email = img.dataset.avatarEmail || "";
+        const extraClass = img.dataset.avatarClass || "";
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = renderAvatar(
+          { name, email },
+          extraClass,
+          true
+        );
+        const fallbackEl = wrapper.firstElementChild;
+        if (fallbackEl) img.replaceWith(fallbackEl);
+      });
+    });
   }
 
   function splitToTags(raw) {
@@ -382,6 +404,8 @@ window.__postScope = {
       ? posts.map(renderPostCard).join("")
       : `<div class="post-card p-4 text-gray-600">暂无动态</div>`;
 
+    bindAvatarFallbacks(feed);
+
     if (window.hljs) {
       document.querySelectorAll("pre code").forEach((el) => window.hljs.highlightElement(el));
     }
@@ -438,6 +462,8 @@ window.__postScope = {
         `;
       })
       .join("");
+
+    bindAvatarFallbacks(box);
   }
 
   async function openComments(postId) {
