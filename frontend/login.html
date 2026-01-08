@@ -14,15 +14,30 @@
     .btn-primary { background: #000; color: #fff; }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     .input { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); }
+    .role-toggle { background: var(--bg-soft); border: 1px solid var(--border-subtle); }
+    .role-btn { color: var(--text-muted); }
+    .role-btn.active { background: #000; color: #fff; }
   </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4">
   <div class="card w-full max-w-md rounded-lg shadow p-6">
     <h1 class="text-2xl font-bold mb-1">登录</h1>
-    <p class="text-sm text-gray-500 mb-6">使用邮箱与密码登录</p>
+    <p class="text-sm text-gray-500 mb-6">请选择登录身份</p>
 
     <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-sm mb-2">登录身份</label>
+        <div class="role-toggle flex rounded-lg p-1 gap-1">
+          <button class="role-btn flex-1 rounded-md py-2 text-sm font-medium active" type="button" data-role="user">
+            用户登录
+          </button>
+          <button class="role-btn flex-1 rounded-md py-2 text-sm font-medium" type="button" data-role="admin">
+            管理员登录
+          </button>
+        </div>
+        <input id="loginRole" type="hidden" value="user" />
+      </div>
       <div>
         <label class="block text-sm mb-1" for="email">邮箱</label>
         <input id="email" class="input w-full rounded px-3 py-2" type="email" placeholder="请输入邮箱" required />
@@ -57,10 +72,28 @@
       const form = document.getElementById("loginForm");
       const btn = document.getElementById("loginBtn");
       const msg = document.getElementById("msg");
+      const roleInput = document.getElementById("loginRole");
+      const roleButtons = document.querySelectorAll("[data-role]");
 
       function setMsg(text, ok = false) {
         msg.textContent = text || "";
         msg.className = ok ? "text-sm text-green-600" : "text-sm text-red-600";
+      }
+
+      function setRole(role) {
+        roleInput.value = role;
+        roleButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.role === role);
+        });
+      }
+
+      roleButtons.forEach((button) => {
+        button.addEventListener("click", () => setRole(button.dataset.role));
+      });
+
+      const storedRole = localStorage.getItem("login_role");
+      if (storedRole) {
+        setRole(storedRole);
       }
 
       async function redirectIfAlreadyLoggedIn() {
@@ -69,8 +102,13 @@
 
         try {
           // 用真实接口校验 token，避免本地残留导致假登录
-          await API.fetchMe();
-          window.location.href = "index.html";
+          const me = await API.fetchMe();
+          const role = localStorage.getItem("login_role") || "user";
+          if (role === "admin" && (me.is_staff || me.is_superuser)) {
+            window.location.href = "admin.html";
+          } else {
+            window.location.href = "index.html";
+          }
         } catch (_) {
           // token 无效/过期：清理后停留在登录页
           if (API.clearTokens) API.clearTokens();
@@ -86,6 +124,7 @@
 
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
+        const role = roleInput.value || "user";
 
         if (!email || !password) {
           setMsg("邮箱和密码不能为空");
@@ -97,9 +136,16 @@
         btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> 登录中...';
 
         try {
-          await API.loginByEmail(email, password);
+          await API.loginByEmail(email, password, role);
+          const me = await API.fetchMe({ force: true });
+          if (role === "admin" && !(me.is_staff || me.is_superuser)) {
+            if (API.logout) API.logout();
+            setMsg("该账号没有管理员权限");
+            return;
+          }
+          localStorage.setItem("login_role", role);
           setMsg("登录成功，正在跳转…", true);
-          window.location.href = "index.html";
+          window.location.href = role === "admin" ? "admin.html" : "index.html";
         } catch (err) {
           setMsg(err.message || "登录失败");
         } finally {
