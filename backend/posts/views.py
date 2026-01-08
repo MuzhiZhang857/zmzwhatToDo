@@ -202,6 +202,17 @@ class ChecklistToggleAPIView(APIView):
         return Response({"checklist_items": post.checklist_items})
 
 
+class PostDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, post_id: int):
+        post = get_object_or_404(Post, id=post_id)
+        if post.author_id != request.user.id:
+            raise PermissionDenied("无权限删除")
+        post.delete()
+        return Response({"message": "已删除"}, status=status.HTTP_200_OK)
+
+
 class AttachmentDownloadAPIView(APIView):
     """
     受控下载接口：避免 /media/ 直出导致隐私泄露。

@@ -216,10 +216,10 @@
   }
 
   // ---------- Auth APIs ----------
-  async function loginByEmail(email, password) {
+  async function loginByEmail(email, password, role = "user") {
     const data = await apiFetch("/api/users/login/", {
       method: "POST",
-      body: { email, password },
+      body: { email, password, role },
       auth: false,
       retryOn401: false,
     });
