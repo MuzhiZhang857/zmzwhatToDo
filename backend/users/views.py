@@ -15,6 +15,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .utils import build_avatar_url
 
+from .utils import build_avatar_url
+
 User = get_user_model()
 PASSWORD_MIN_LENGTH = 6
 ADMIN_PAGE_SIZE = 10
@@ -30,6 +32,16 @@ def issue_tokens(user):
 
 def normalize_email(email: str) -> str:
     return (email or "").strip().lower()
+
+
+def build_avatar_url(request, user):
+    if not getattr(user, "avatar", None):
+        return None
+    try:
+        url = user.avatar.url
+    except ValueError:
+        return None
+    return request.build_absolute_uri(url) if request else url
 
 
 class RegisterView(APIView):
