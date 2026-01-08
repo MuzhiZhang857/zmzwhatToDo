@@ -66,10 +66,22 @@
       return `${window.location.origin}/index.html?join=${encodeURIComponent(code)}`;
     },
 
+    getQrSize(targetEl) {
+      if (!targetEl) return 96;
+      const dataSize = Number.parseInt(targetEl.dataset?.qrSize, 10);
+      if (Number.isFinite(dataSize) && dataSize > 0) return dataSize;
+      const rect = targetEl.getBoundingClientRect?.();
+      if (rect?.width && rect?.height) {
+        return Math.round(Math.min(rect.width, rect.height));
+      }
+      return 96;
+    },
+
     renderQrToTarget(targetEl, text) {
       if (!targetEl) return;
       const t = (text || "").trim();
       if (!t) return;
+      const size = this.getQrSize(targetEl);
 
       // 尽量清空旧内容
       try {
@@ -84,7 +96,9 @@
       try {
         // 1) QRCode.toCanvas(canvas, text, opts, cb)
         if (window.QRCode && typeof window.QRCode.toCanvas === "function" && targetEl.tagName === "CANVAS") {
-          window.QRCode.toCanvas(targetEl, t, { width: 144, margin: 1 }, (err) => {
+          targetEl.width = size;
+          targetEl.height = size;
+          window.QRCode.toCanvas(targetEl, t, { width: size, margin: 1 }, (err) => {
             if (err) console.error("二维码渲染失败(toCanvas):", err);
           });
           return;
@@ -100,11 +114,13 @@
           holder.style.display = "flex";
           holder.style.alignItems = "center";
           holder.style.justifyContent = "center";
+          holder.style.width = `${size}px`;
+          holder.style.height = `${size}px`;
 
           parent.replaceChild(holder, targetEl);
 
           // eslint-disable-next-line no-new
-          new window.QRCode(holder, { text: t, width: 144, height: 144 });
+          new window.QRCode(holder, { text: t, width: size, height: size });
           return;
         }
 
