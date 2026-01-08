@@ -11,6 +11,9 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .utils import build_avatar_url
 
 from .utils import build_avatar_url
 
@@ -173,6 +176,14 @@ class LogoutView(APIView):
 
     def post(self, request):
         return Response({"message": "已退出（JWT 模式）"})
+
+
+class SafeTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except User.DoesNotExist:
+            return Response({"message": "用户不存在"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class AdminUserListView(APIView):
