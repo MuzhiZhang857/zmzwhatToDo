@@ -16,12 +16,12 @@ class TeamListCreateView(APIView):
         # 获取用户创建或加入的所有团队
         memberships = TeamMember.objects.filter(user=request.user)
         teams = [m.team for m in memberships]
-        serializer = TeamSerializer(teams, many=True)
+        serializer = TeamSerializer(teams, many=True, context={"request": request})
         return Response(serializer.data)
 
     def post(self, request):
         try:
-            serializer = TeamSerializer(data=request.data)
+            serializer = TeamSerializer(data=request.data, context={"request": request})
             if serializer.is_valid():
                 # 保存时自动指定当前用户为 owner
                 team = serializer.save(owner=request.user)
@@ -31,7 +31,10 @@ class TeamListCreateView(APIView):
                     user=request.user,
                     role=TeamMember.Role.ADMIN
                 )
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(
+                    TeamSerializer(team, context={"request": request}).data,
+                    status=status.HTTP_201_CREATED,
+                )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": f"创建失败: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -75,7 +78,7 @@ class TeamPostView(APIView):
             return Response({"error": "你不是该团队成员，无权查看"}, status=status.HTTP_403_FORBIDDEN)
 
         posts = TeamPost.objects.filter(team_id=team_id)
-        serializer = TeamPostSerializer(posts, many=True)
+        serializer = TeamPostSerializer(posts, many=True, context={"request": request})
         return Response(serializer.data)
 
     def post(self, request, team_id):
@@ -85,8 +88,11 @@ class TeamPostView(APIView):
         if not TeamMember.objects.filter(team=team, user=request.user).exists():
             return Response({"error": "你不是该团队成员，无权发帖"}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = TeamPostSerializer(data=request.data)
+        serializer = TeamPostSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
-            serializer.save(author=request.user, team=team)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            post = serializer.save(author=request.user, team=team)
+            return Response(
+                TeamPostSerializer(post, context={"request": request}).data,
+                status=status.HTTP_201_CREATED,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
