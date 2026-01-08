@@ -6,7 +6,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -14,6 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 PASSWORD_MIN_LENGTH = 6
+ADMIN_PAGE_SIZE = 10
 
 
 def issue_tokens(user):
@@ -157,3 +158,87 @@ class LogoutView(APIView):
 
     def post(self, request):
         return Response({"message": "已退出（JWT 模式）"})
+
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        page_str = (request.query_params.get("page") or "1").strip()
+        try:
+            page = max(int(page_str), 1)
+        except ValueError:
+            page = 1
+
+        queryset = User.objects.order_by("-date_joined")
+        total = queryset.count()
+        total_pages = max((total + ADMIN_PAGE_SIZE - 1) // ADMIN_PAGE_SIZE, 1)
+        if page > total_pages:
+            page = total_pages
+        start = (page - 1) * ADMIN_PAGE_SIZE
+        end = start + ADMIN_PAGE_SIZE
+
+        results = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "name": getattr(user, "name", ""),
+                "password_mask": "********",
+                "date_joined": user.date_joined.isoformat(),
+                "is_superuser": user.is_superuser,
+            }
+            for user in queryset[start:end]
+        ]
+
+        return Response(
+            {
+                "results": results,
+                "pagination": {
+                    "page": page,
+                    "page_size": ADMIN_PAGE_SIZE,
+                    "total": total,
+                    "total_pages": total_pages,
+                },
+            }
+        )
+
+
+class AdminUserDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, user_id: int):
+        if request.user.id == user_id:
+            return Response({"message": "不能删除当前登录账号"}, status=400)
+
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({"message": "用户不存在"}, status=404)
+
+        if user.is_superuser and not request.user.is_superuser:
+            return Response({"message": "无权限删除超级管理员"}, status=403)
+
+        user.delete()
+        return Response({"message": "已删除"})
+
+
+class AdminUserPasswordResetView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, user_id: int):
+        data = request.data or {}
+        password = (data.get("password") or "").strip()
+
+        if len(password) < PASSWORD_MIN_LENGTH:
+            return Response({"message": f"密码至少 {PASSWORD_MIN_LENGTH} 位"}, status=400)
+
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({"message": "用户不存在"}, status=404)
+
+        if user.is_superuser and not request.user.is_superuser:
+            return Response({"message": "无权限修改超级管理员密码"}, status=403)
+
+        user.set_password(password)
+        user.save(update_fields=["password"])
+        return Response({"message": "密码已更新"})

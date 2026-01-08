@@ -5,6 +5,245 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>校园备忘录 - 管理后台</title>
 
+
+  <link rel="stylesheet" href="vendor/tailwind.min.css">
+  <link rel="stylesheet" href="vendor/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    body { background-color: #f5f5f5; color: #333; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .sidebar { background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .card { background-color: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid #e5e7eb; }
+    .btn-primary { background: #000; color: #fff; }
+    .btn-ghost { border: 1px solid #e5e7eb; color: #374151; }
+    .table-head { color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+
+<body class="antialiased">
+<div class="flex min-h-screen">
+  <aside class="sidebar hidden md:flex h-screen">
+    <div class="w-16 border-r flex flex-col items-center py-4 gap-3">
+      <div class="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold select-none">
+        M
+      </div>
+      <button class="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 transition" title="用户管理">
+        <i class="fas fa-users text-blue-600"></i>
+      </button>
+      <div class="flex-1"></div>
+      <button id="logoutBtn" class="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 transition" title="退出登录">
+        <i class="fas fa-sign-out-alt text-gray-500"></i>
+      </button>
+    </div>
+
+    <div class="w-64 flex flex-col">
+      <div class="px-4 py-4 border-b">
+        <div class="text-base font-bold leading-tight">管理后台</div>
+        <div class="text-xs text-gray-500 mt-1">用户管理 · 权限配置</div>
+      </div>
+      <div class="flex-1 overflow-auto px-4 py-4 space-y-4">
+        <div class="card p-4">
+          <p class="text-xs text-gray-500">当前管理员</p>
+          <p id="adminName" class="font-semibold mt-1">加载中...</p>
+        </div>
+        <div class="card p-4 text-sm text-gray-600 space-y-2">
+          <p class="font-medium text-gray-800">功能说明</p>
+          <p>支持查看用户、删除账号、重置密码。</p>
+          <p>每页显示 10 条，按注册时间倒序排列。</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="flex-1 overflow-auto">
+    <div class="max-w-5xl mx-auto p-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">用户管理</h1>
+          <p class="text-sm text-gray-500">管理平台注册用户账号及权限</p>
+        </div>
+        <div class="card px-4 py-3 flex items-center gap-3">
+          <i class="fas fa-user-shield text-gray-500"></i>
+          <div>
+            <p class="text-xs text-gray-500">当前管理员</p>
+            <p id="adminNameMobile" class="text-sm font-semibold">加载中...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800">用户列表</h2>
+            <p class="text-xs text-gray-500">用户名、密码（遮罩）、注册时间</p>
+          </div>
+          <div class="text-xs text-gray-500">共 <span id="userTotal">0</span> 人</div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="table-head border-b">
+              <tr>
+                <th class="py-2 text-left">用户名</th>
+                <th class="py-2 text-left">密码</th>
+                <th class="py-2 text-left">注册时间</th>
+                <th class="py-2 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="userTable" class="text-gray-700">
+              <tr>
+                <td class="py-4" colspan="4">加载中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-6">
+          <p class="text-xs text-gray-500">第 <span id="currentPage">1</span> / <span id="totalPages">1</span> 页</p>
+          <div class="flex items-center gap-2">
+            <button id="prevPage" class="pagination-btn btn-ghost px-3 py-2 rounded-lg text-sm">上一页</button>
+            <button id="nextPage" class="pagination-btn btn-primary px-3 py-2 rounded-lg text-sm">下一页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  (function () {
+    if (!window.API || !API.fetchMe) {
+      console.error("API 未加载：请确认先引入 js/api.js");
+      return;
+    }
+
+    const adminName = document.getElementById("adminName");
+    const adminNameMobile = document.getElementById("adminNameMobile");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userTable = document.getElementById("userTable");
+    const userTotal = document.getElementById("userTotal");
+    const currentPage = document.getElementById("currentPage");
+    const totalPages = document.getElementById("totalPages");
+    const prevPage = document.getElementById("prevPage");
+    const nextPage = document.getElementById("nextPage");
+
+    let page = 1;
+
+    function formatDate(iso) {
+      if (!iso) return "-";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return iso;
+      return date.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function renderRows(users) {
+      if (!users.length) {
+        userTable.innerHTML = '<tr><td class="py-4" colspan="4">暂无用户</td></tr>';
+        return;
+      }
+      userTable.innerHTML = users.map((user) => {
+        const name = user.name || user.username || user.email;
+        const disabled = user.is_superuser ? "opacity-60 cursor-not-allowed" : "";
+        const deleteLabel = user.is_superuser ? "不可删除" : "删除";
+        return `
+          <tr class="border-b">
+            <td class="py-3 font-medium">${name}</td>
+            <td class="py-3">${user.password_mask || "********"}</td>
+            <td class="py-3">${formatDate(user.date_joined)}</td>
+            <td class="py-3 text-right space-x-2">
+              <button class="btn-ghost px-3 py-1 rounded text-xs" data-action="reset" data-id="${user.id}">重置密码</button>
+              <button class="btn-ghost px-3 py-1 rounded text-xs ${disabled}" data-action="delete" data-id="${user.id}" ${user.is_superuser ? "disabled" : ""}>${deleteLabel}</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function fetchUsers(targetPage) {
+      userTable.innerHTML = '<tr><td class="py-4" colspan="4">加载中...</td></tr>';
+      try {
+        const data = await API.apiFetch(`/api/users/admin/users/?page=${targetPage}`, { method: "GET" });
+        renderRows(data.results || []);
+        const pagination = data.pagination || {};
+        page = pagination.page || targetPage;
+        userTotal.textContent = pagination.total || 0;
+        currentPage.textContent = pagination.page || 1;
+        totalPages.textContent = pagination.total_pages || 1;
+        prevPage.disabled = page <= 1;
+        nextPage.disabled = page >= (pagination.total_pages || 1);
+      } catch (err) {
+        userTable.innerHTML = `<tr><td class="py-4 text-red-500" colspan="4">${err.message || "加载失败"}</td></tr>`;
+      }
+    }
+
+    async function handleAction(event) {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const action = button.dataset.action;
+      const userId = button.dataset.id;
+
+      if (action === "delete") {
+        if (!confirm("确定要删除该用户吗？")) return;
+        try {
+          await API.apiFetch(`/api/users/admin/users/${userId}/`, { method: "DELETE" });
+          fetchUsers(page);
+        } catch (err) {
+          alert(err.message || "删除失败");
+        }
+      }
+
+      if (action === "reset") {
+        const password = prompt("请输入新的密码（至少6位）");
+        if (!password) return;
+        try {
+          await API.apiFetch(`/api/users/admin/users/${userId}/password/`, {
+            method: "POST",
+            body: { password },
+          });
+          alert("密码已更新");
+        } catch (err) {
+          alert(err.message || "修改失败");
+        }
+      }
+    }
+
+    async function init() {
+      try {
+        const me = await API.fetchMe({ force: true });
+        if (!me.is_staff && !me.is_superuser) {
+          API.logout();
+          window.location.href = "login.html";
+          return;
+        }
+        const name = me.name || me.username || me.email;
+        adminName.textContent = name;
+        adminNameMobile.textContent = name;
+      } catch (err) {
+        API.logout();
+        window.location.href = "login.html";
+        return;
+      }
+      fetchUsers(page);
+    }
+
+    userTable.addEventListener("click", handleAction);
+    prevPage.addEventListener("click", () => {
+      if (page > 1) fetchUsers(page - 1);
+    });
+    nextPage.addEventListener("click", () => {
+      fetchUsers(page + 1);
+    });
+    logoutBtn.addEventListener("click", () => {
+      API.logout();
+      window.location.href = "login.html";
+    });
+
+    init();
+  })();
+</script>
+
   <link href="vendor/tailwind.min.css" rel="stylesheet">
   <link href="vendor/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
@@ -188,5 +427,6 @@
       init();
     })();
   </script>
+
 </body>
 </html>
