@@ -4,9 +4,18 @@ from .models import User
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("id", "name", "email")
+        fields = ("id", "name", "email", "avatar_url")
+
+    def get_avatar_url(self, obj):
+        request = self.context.get("request")
+        if not obj.avatar:
+            return None
+        url = obj.avatar.url
+        return request.build_absolute_uri(url) if request else url
 
 
 class RegisterSerializer(serializers.Serializer):

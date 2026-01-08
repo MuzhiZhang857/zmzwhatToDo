@@ -29,6 +29,16 @@ def normalize_email(email: str) -> str:
     return (email or "").strip().lower()
 
 
+def build_avatar_url(request, user):
+    if not getattr(user, "avatar", None):
+        return None
+    try:
+        url = user.avatar.url
+    except ValueError:
+        return None
+    return request.build_absolute_uri(url) if request else url
+
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -82,6 +92,7 @@ class RegisterView(APIView):
                     "username": user.username,
                     "email": user.email,
                     "name": getattr(user, "name", ""),
+                    "avatar_url": build_avatar_url(request, user),
                 },
                 **tokens,
             },
@@ -130,6 +141,7 @@ class LoginView(APIView):
                     "name": getattr(user, "name", ""),
                     "is_staff": user.is_staff,
                     "is_superuser": user.is_superuser,
+                    "avatar_url": build_avatar_url(request, user),
                 },
                 **tokens,
             }
@@ -149,6 +161,7 @@ class MeAPIView(APIView):
                 "name": getattr(u, "name", ""),
                 "is_staff": u.is_staff,
                 "is_superuser": u.is_superuser,
+                "avatar_url": build_avatar_url(request, u),
             }
         )
 
@@ -187,6 +200,7 @@ class AdminUserListView(APIView):
                 "password_mask": "********",
                 "date_joined": user.date_joined.isoformat(),
                 "is_superuser": user.is_superuser,
+                "avatar_url": build_avatar_url(request, user),
             }
             for user in queryset[start:end]
         ]
