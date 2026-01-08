@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post, PostComment, PostAttachment
+from users.utils import build_avatar_url
 
 
 class PostAttachmentSerializer(serializers.ModelSerializer):
@@ -47,11 +48,13 @@ class PostSerializer(serializers.ModelSerializer):
 
     def get_author(self, obj):
         u = obj.author
+        request = self.context.get("request")
         return {
             "id": u.id,
             "username": getattr(u, "username", ""),
             "email": getattr(u, "email", ""),
             "name": getattr(u, "name", ""),
+            "avatar_url": build_avatar_url(request, u),
         }
 
     def get_attachments(self, obj):
@@ -118,9 +121,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_author(self, obj):
         u = obj.author
+        request = self.context.get("request")
         return {
             "id": u.id,
             "username": getattr(u, "username", ""),
             "email": getattr(u, "email", ""),
             "name": getattr(u, "name", ""),
+            "avatar_url": build_avatar_url(request, u),
         }

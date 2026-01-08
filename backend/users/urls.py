@@ -7,8 +7,8 @@ from .views import (
     AdminUserListView,
     AdminUserDetailView,
     AdminUserPasswordResetView,
+    SafeTokenRefreshView,
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 
 urlpatterns = [
@@ -19,6 +19,6 @@ urlpatterns = [
     path("admin/users/", AdminUserListView.as_view()),
     path("admin/users/<int:user_id>/", AdminUserDetailView.as_view()),
     path("admin/users/<int:user_id>/password/", AdminUserPasswordResetView.as_view()),
-    path("token/refresh/", TokenRefreshView.as_view()),
+    path("token/refresh/", SafeTokenRefreshView.as_view()),
 
 ]

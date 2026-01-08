@@ -128,7 +128,7 @@ class CommentListAPIView(APIView):
 
     def get(self, request, post_id: int):
         qs = PostComment.objects.select_related("author").filter(post_id=post_id).all()
-        return Response(CommentSerializer(qs, many=True).data)
+        return Response(CommentSerializer(qs, many=True, context={"request": request}).data)
 
 
 class CommentCreateAPIView(APIView):
@@ -145,7 +145,10 @@ class CommentCreateAPIView(APIView):
             raise Http404("帖子不存在")
 
         comment = PostComment.objects.create(post_id=post_id, author=request.user, content=content)
-        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+        return Response(
+            CommentSerializer(comment, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PostLikeToggleAPIView(APIView):
