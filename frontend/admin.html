@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>校园备忘录 - 管理后台</title>
 
+
   <link rel="stylesheet" href="vendor/tailwind.min.css">
   <link rel="stylesheet" href="vendor/all.min.css">
   <link rel="stylesheet" href="css/style.css">
@@ -242,5 +243,190 @@
     init();
   })();
 </script>
+
+  <link href="vendor/tailwind.min.css" rel="stylesheet">
+  <link href="vendor/all.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+
+  <style>
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); }
+    .nav-pill { background: var(--bg-soft); border: 1px solid var(--border-subtle); }
+    .nav-pill.active { background: #000; color: #fff; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-white border-r border-gray-200 p-6 hidden lg:block">
+      <div class="flex items-center gap-2 mb-8">
+        <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-black text-white font-semibold">AD</span>
+        <div>
+          <p class="text-sm text-gray-500">管理后台</p>
+          <p class="font-semibold">校园备忘录</p>
+        </div>
+      </div>
+      <nav class="space-y-2 text-sm">
+        <a class="nav-pill active block px-3 py-2 rounded-lg" href="#">总览</a>
+        <a class="nav-pill block px-3 py-2 rounded-lg" href="#">用户管理</a>
+        <a class="nav-pill block px-3 py-2 rounded-lg" href="#">内容审核</a>
+        <a class="nav-pill block px-3 py-2 rounded-lg" href="#">系统设置</a>
+      </nav>
+    </aside>
+
+    <main class="flex-1 p-6 lg:p-10">
+      <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold">管理员控制台</h1>
+          <p class="text-sm text-gray-500">集中管理用户、内容与系统状态</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <p class="text-sm text-gray-500">当前管理员</p>
+            <p id="adminName" class="font-semibold">加载中...</p>
+          </div>
+          <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-black text-white text-sm">退出登录</button>
+        </div>
+      </header>
+
+      <section class="mt-8 grid gap-4 md:grid-cols-3">
+        <div class="card rounded-xl p-5">
+          <p class="text-sm text-gray-500">活跃用户</p>
+          <p class="text-3xl font-semibold mt-2">1,284</p>
+          <p class="text-xs text-green-600 mt-2"><i class="fas fa-arrow-up"></i> 本周 +8.2%</p>
+        </div>
+        <div class="card rounded-xl p-5">
+          <p class="text-sm text-gray-500">待审核内容</p>
+          <p class="text-3xl font-semibold mt-2">36</p>
+          <p class="text-xs text-orange-500 mt-2"><i class="fas fa-exclamation-circle"></i> 12 条高优先级</p>
+        </div>
+        <div class="card rounded-xl p-5">
+          <p class="text-sm text-gray-500">系统健康度</p>
+          <p class="text-3xl font-semibold mt-2">良好</p>
+          <p class="text-xs text-gray-500 mt-2">CPU 42% · 内存 63%</p>
+        </div>
+      </section>
+
+      <section class="mt-8 grid gap-6 lg:grid-cols-3">
+        <div class="card rounded-xl p-6 lg:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">用户管理</h2>
+            <button class="text-sm text-black font-medium">查看全部</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="text-left text-gray-500">
+                <tr>
+                  <th class="py-2">用户</th>
+                  <th class="py-2">角色</th>
+                  <th class="py-2">状态</th>
+                  <th class="py-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700">
+                <tr class="border-t">
+                  <td class="py-3">lihua@example.com</td>
+                  <td class="py-3">普通用户</td>
+                  <td class="py-3"><span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">活跃</span></td>
+                  <td class="py-3 text-right"><button class="text-xs text-gray-500">详情</button></td>
+                </tr>
+                <tr class="border-t">
+                  <td class="py-3">admin@example.com</td>
+                  <td class="py-3">管理员</td>
+                  <td class="py-3"><span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">重点</span></td>
+                  <td class="py-3 text-right"><button class="text-xs text-gray-500">详情</button></td>
+                </tr>
+                <tr class="border-t">
+                  <td class="py-3">ting@example.com</td>
+                  <td class="py-3">内容创作者</td>
+                  <td class="py-3"><span class="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">待审核</span></td>
+                  <td class="py-3 text-right"><button class="text-xs text-gray-500">审核</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card rounded-xl p-6">
+          <h2 class="text-lg font-semibold mb-4">近期操作</h2>
+          <div class="space-y-4 text-sm text-gray-600">
+            <div>
+              <p class="font-medium text-gray-800">冻结账号</p>
+              <p class="text-xs text-gray-500">对 user_103 执行冻结</p>
+            </div>
+            <div>
+              <p class="font-medium text-gray-800">发布公告</p>
+              <p class="text-xs text-gray-500">更新系统维护通知</p>
+            </div>
+            <div>
+              <p class="font-medium text-gray-800">权限调整</p>
+              <p class="text-xs text-gray-500">授予 editor 组审核权限</p>
+            </div>
+          </div>
+          <button class="mt-6 w-full rounded-lg border border-gray-200 py-2 text-sm">创建新任务</button>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <div class="card rounded-xl p-6">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold">工作提醒</h2>
+              <p class="text-sm text-gray-500">管理员可在此查看需要立即处理的事项。</p>
+            </div>
+            <button class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">去处理</button>
+          </div>
+          <div class="mt-4 grid gap-3 md:grid-cols-2">
+            <div class="border border-dashed border-gray-200 rounded-lg p-4">
+              <p class="text-sm font-medium">今天需要审核 12 条内容</p>
+              <p class="text-xs text-gray-500 mt-1">优先处理举报与高互动内容。</p>
+            </div>
+            <div class="border border-dashed border-gray-200 rounded-lg p-4">
+              <p class="text-sm font-medium">系统健康检查未完成</p>
+              <p class="text-xs text-gray-500 mt-1">请确认备份与日志收集任务。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    (function () {
+      if (!window.API || !API.fetchMe) {
+        console.error("API 未加载：请确认先引入 js/api.js");
+        return;
+      }
+
+      const adminName = document.getElementById("adminName");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      async function init() {
+        try {
+          const me = await API.fetchMe({ force: true });
+          if (!me.is_staff && !me.is_superuser) {
+            API.logout();
+            window.location.href = "login.html";
+            return;
+          }
+          adminName.textContent = me.name || me.username || me.email;
+        } catch (err) {
+          API.logout();
+          window.location.href = "login.html";
+        }
+      }
+
+      logoutBtn.addEventListener("click", () => {
+        API.logout();
+        window.location.href = "login.html";
+      });
+
+      init();
+    })();
+  </script>
+
 </body>
 </html>
