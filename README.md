@@ -34,8 +34,8 @@
 
 1. **克隆项目**
    ```bash
-   git clone https://gitee.com/muzhi4549/campus-memo-based-on---django.git
-   cd campus-memo-based-on---django
+   git clone https://gitee.com/muzhi4549/campus-memo-based-on-django.git
+   cd campus-memo-based-on-django
    ```
 
 2. **启动后端服务**
