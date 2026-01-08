@@ -12,6 +12,8 @@ from rest_framework import status
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .utils import build_avatar_url
+
 User = get_user_model()
 PASSWORD_MIN_LENGTH = 6
 ADMIN_PAGE_SIZE = 10

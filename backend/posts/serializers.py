@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post, PostComment, PostAttachment
+from users.utils import build_avatar_url
 
 
 def build_avatar_url(request, user):

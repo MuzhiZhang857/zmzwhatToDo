@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import User
+from .utils import build_avatar_url
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
@@ -11,11 +12,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "email", "avatar_url")
 
     def get_avatar_url(self, obj):
-        request = self.context.get("request")
-        if not obj.avatar:
-            return None
-        url = obj.avatar.url
-        return request.build_absolute_uri(url) if request else url
+        return build_avatar_url(self.context.get("request"), obj)
 
 
 class RegisterSerializer(serializers.Serializer):
