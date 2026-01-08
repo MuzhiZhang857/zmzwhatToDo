@@ -97,6 +97,7 @@ class LoginView(APIView):
         email = normalize_email(data.get("email"))
         username = (data.get("username") or "").strip()
         password = (data.get("password") or "").strip()
+        role = (data.get("role") or "user").strip().lower()
 
         if not password or (not email and not username):
             return Response({"message": "邮箱/用户名和密码不能为空"}, status=400)
@@ -113,6 +114,9 @@ class LoginView(APIView):
         if not user.is_active:
             return Response({"message": "账号已被禁用"}, status=403)
 
+        if role == "admin" and not (user.is_staff or user.is_superuser):
+            return Response({"message": "该账号没有管理员权限"}, status=403)
+
         tokens = issue_tokens(user)
 
         return Response(
@@ -123,6 +127,8 @@ class LoginView(APIView):
                     "username": user.username,
                     "email": user.email,
                     "name": getattr(user, "name", ""),
+                    "is_staff": user.is_staff,
+                    "is_superuser": user.is_superuser,
                 },
                 **tokens,
             }
@@ -140,6 +146,8 @@ class MeAPIView(APIView):
                 "username": u.username,
                 "email": u.email,
                 "name": getattr(u, "name", ""),
+                "is_staff": u.is_staff,
+                "is_superuser": u.is_superuser,
             }
         )
 
