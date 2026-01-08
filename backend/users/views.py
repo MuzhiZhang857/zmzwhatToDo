@@ -11,6 +11,9 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .utils import build_avatar_url
 
 User = get_user_model()
 PASSWORD_MIN_LENGTH = 6
@@ -82,6 +85,7 @@ class RegisterView(APIView):
                     "username": user.username,
                     "email": user.email,
                     "name": getattr(user, "name", ""),
+                    "avatar_url": build_avatar_url(request, user),
                 },
                 **tokens,
             },
@@ -130,6 +134,7 @@ class LoginView(APIView):
                     "name": getattr(user, "name", ""),
                     "is_staff": user.is_staff,
                     "is_superuser": user.is_superuser,
+                    "avatar_url": build_avatar_url(request, user),
                 },
                 **tokens,
             }
@@ -149,6 +154,7 @@ class MeAPIView(APIView):
                 "name": getattr(u, "name", ""),
                 "is_staff": u.is_staff,
                 "is_superuser": u.is_superuser,
+                "avatar_url": build_avatar_url(request, u),
             }
         )
 
@@ -158,6 +164,14 @@ class LogoutView(APIView):
 
     def post(self, request):
         return Response({"message": "已退出（JWT 模式）"})
+
+
+class SafeTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except User.DoesNotExist:
+            return Response({"message": "用户不存在"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class AdminUserListView(APIView):
@@ -187,6 +201,7 @@ class AdminUserListView(APIView):
                 "password_mask": "********",
                 "date_joined": user.date_joined.isoformat(),
                 "is_superuser": user.is_superuser,
+                "avatar_url": build_avatar_url(request, user),
             }
             for user in queryset[start:end]
         ]
