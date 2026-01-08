@@ -293,15 +293,21 @@ window.__postScope = {
       ${renderCodeBlock(post)}
       ${tagHtml}
 
-      <div class="border-t pt-3 text-sm flex items-center gap-3">
-        <button class="like-toggle ${likeBtnClass}" data-post-id="${post.id}" type="button">
-          <span class="select-none">❤</span>
-          <span class="like-count">${likeCount}</span>
-        </button>
+      <div class="border-t pt-3 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button class="like-toggle ${likeBtnClass}" data-post-id="${post.id}" type="button">
+            <span class="select-none">❤</span>
+            <span class="like-count">${likeCount}</span>
+          </button>
 
-        <button class="comment-toggle ${commentBtnClass}" data-post-id="${post.id}" type="button">
-          <span class="select-none">💬</span>
-          <span class="comment-count">${commentCount}</span>
+          <button class="comment-toggle ${commentBtnClass}" data-post-id="${post.id}" type="button">
+            <span class="select-none">💬</span>
+            <span class="comment-count">${commentCount}</span>
+          </button>
+        </div>
+
+        <button class="post-delete text-gray-500 hover:text-red-600 transition" data-post-id="${post.id}" type="button">
+          <i class="fas fa-trash-alt mr-1"></i> 删除
         </button>
       </div>
 
@@ -490,6 +496,24 @@ window.__postScope = {
       if (cBtn) {
         const postId = cBtn.dataset.postId;
         toggleComments(postId);
+        return;
+      }
+
+      // 删除帖子
+      const deleteBtn = e.target.closest(".post-delete");
+      if (deleteBtn) {
+        const postId = deleteBtn.dataset.postId;
+        if (!postId) return;
+        const confirmed = window.confirm("确定要删除该帖子吗？");
+        if (!confirmed) return;
+        try {
+          await API.apiFetch(`/api/posts/${postId}/`, { method: "DELETE" });
+          delete window.__postsById?.[String(postId)];
+          const card = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+          if (card) card.remove();
+        } catch (err) {
+          safeAlert(err, "删除失败");
+        }
         return;
       }
 
