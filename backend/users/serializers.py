@@ -1,12 +1,18 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import User
+from .utils import build_avatar_url
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("id", "name", "email")
+        fields = ("id", "name", "email", "avatar_url")
+
+    def get_avatar_url(self, obj):
+        return build_avatar_url(self.context.get("request"), obj)
 
 
 class RegisterSerializer(serializers.Serializer):

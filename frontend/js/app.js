@@ -18,6 +18,81 @@ window.__postScope = {
       .replaceAll("'", "&#039;");
   }
 
+  const AVATAR_COLORS = [
+    "#5B8FF9",
+    "#5AD8A6",
+    "#5D7092",
+    "#F6BD16",
+    "#E86452",
+    "#6DC8EC",
+    "#9270CA",
+    "#FF9D4D",
+  ];
+
+  function hashString(value) {
+    const str = String(value || "");
+    let hash = 0;
+    for (let i = 0; i < str.length; i += 1) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function getAvatarInitial(name, email) {
+    const base = (name || "").trim() || (email || "").trim();
+    if (!base) return "?";
+    const key = base.includes("@") ? base.split("@")[0] : base;
+    return key.charAt(0).toUpperCase() || "?";
+  }
+
+  function getAvatarColor(seed) {
+    const index = hashString(seed) % AVATAR_COLORS.length;
+    return AVATAR_COLORS[index];
+  }
+
+  function renderAvatar(user, extraClass = "", forceFallback = false) {
+    const name = user?.name || user?.username || user?.email || "";
+    const email = user?.email || "";
+    const avatarUrl = forceFallback ? "" : user?.avatar_url || "";
+    const className = `comment-avatar rounded-full ${extraClass}`.trim();
+
+    if (avatarUrl) {
+      return `<img class="${className} object-cover" src="${escapeHtml(
+        avatarUrl
+      )}" alt="${escapeHtml(name || "avatar")}" data-avatar-fallback="1" data-avatar-name="${escapeHtml(
+        name
+      )}" data-avatar-email="${escapeHtml(email)}" data-avatar-class="${escapeHtml(extraClass)}" />`;
+    }
+
+    const seed = name || email || "user";
+    const initial = getAvatarInitial(name, email);
+    const color = getAvatarColor(seed);
+    return `<div class="${className}" style="background-color: ${color};">${escapeHtml(
+      initial
+    )}</div>`;
+  }
+
+  function bindAvatarFallbacks(container = document) {
+    container.querySelectorAll("img[data-avatar-fallback]").forEach((img) => {
+      if (img.dataset.avatarBound === "1") return;
+      img.dataset.avatarBound = "1";
+      img.addEventListener("error", () => {
+        const name = img.dataset.avatarName || "";
+        const email = img.dataset.avatarEmail || "";
+        const extraClass = img.dataset.avatarClass || "";
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = renderAvatar(
+          { name, email },
+          extraClass,
+          true
+        );
+        const fallbackEl = wrapper.firstElementChild;
+        if (fallbackEl) img.replaceWith(fallbackEl);
+      });
+    });
+  }
+
   function splitToTags(raw) {
     const s = (raw || "").trim();
     if (!s) return [];
@@ -279,7 +354,7 @@ window.__postScope = {
     <div class="post-card mb-6 p-4" data-post-id="${post.id}">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center">
-          <div class="comment-avatar rounded-full mr-3"></div>
+          ${renderAvatar(post.author, "mr-3")}
           <div>
             <div class="font-medium">${escapeHtml(authorName)}</div>
             <div class="text-xs text-gray-500">${escapeHtml(createdAt)}</div>
@@ -329,6 +404,8 @@ window.__postScope = {
       ? posts.map(renderPostCard).join("")
       : `<div class="post-card p-4 text-gray-600">暂无动态</div>`;
 
+    bindAvatarFallbacks(feed);
+
     if (window.hljs) {
       document.querySelectorAll("pre code").forEach((el) => window.hljs.highlightElement(el));
     }
@@ -376,12 +453,17 @@ window.__postScope = {
         const time = c.created_at ? new Date(c.created_at).toLocaleString() : "";
         return `
           <div class="py-2 border-b">
-            <div class="text-xs text-gray-500">${escapeHtml(name)} · ${escapeHtml(time)}</div>
+            <div class="flex items-center mb-1">
+              ${renderAvatar(c.author, "mr-2")}
+              <div class="text-xs text-gray-500">${escapeHtml(name)} · ${escapeHtml(time)}</div>
+            </div>
             <div class="whitespace-pre-wrap">${escapeHtml(c.content || "")}</div>
           </div>
         `;
       })
       .join("");
+
+    bindAvatarFallbacks(box);
   }
 
   async function openComments(postId) {
