@@ -96,6 +96,19 @@ window.__postScope = {
   window.renderAvatar = renderAvatar;
   window.bindAvatarFallbacks = bindAvatarFallbacks;
 
+  function updateMemoCount(count) {
+    const el = document.getElementById("memo-count");
+    if (el) el.textContent = String(count);
+    window.__memoCount = Number(count) || 0;
+  }
+
+  function updateMemoCountFromStore() {
+    const count = Object.keys(window.__postsById || {}).length;
+    updateMemoCount(count);
+  }
+
+  window.updateMemoCount = updateMemoCount;
+
   function splitToTags(raw) {
     const s = (raw || "").trim();
     if (!s) return [];
@@ -402,6 +415,7 @@ window.__postScope = {
 
     window.__postsById = {};
     posts.forEach((p) => (window.__postsById[String(p.id)] = p));
+    updateMemoCountFromStore();
 
     feed.innerHTML = posts.length
       ? posts.map(renderPostCard).join("")
@@ -596,6 +610,8 @@ window.__postScope = {
           delete window.__postsById?.[String(postId)];
           const card = document.querySelector(`.post-card[data-post-id="${postId}"]`);
           if (card) card.remove();
+          updateMemoCountFromStore();
+          if (window.initCalendar) window.initCalendar();
         } catch (err) {
           safeAlert(err, "删除失败");
         }
@@ -756,6 +772,7 @@ window.__postScope = {
 
           window.__postsById = window.__postsById || {};
           window.__postsById[String(created.id)] = created;
+          updateMemoCountFromStore();
 
           if (window.hljs) {
             document.querySelectorAll("pre code").forEach((el) => window.hljs.highlightElement(el));
