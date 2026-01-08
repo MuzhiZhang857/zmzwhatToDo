@@ -41,25 +41,21 @@ class PostListCreateAPIView(APIView):
 
     def get(self, request):
         user = request.user if request.user.is_authenticated else None
+        if not user:
+            return Response([])
+
         base_qs = (
             Post.objects.select_related("author")
             .prefetch_related("attachments")
-            .all()
+            .filter(author_id=user.id)
             .order_by("-created_at")
         )
 
-        if user:
-            qs = base_qs.annotate(
-                like_count=Count("likes", distinct=True),
-                liked_by_me=Exists(PostLike.objects.filter(post_id=OuterRef("pk"), user_id=user.id)),
-                comment_count=Count("comments", distinct=True),  # ✅ 新增
-            )
-        else:
-            qs = base_qs.annotate(
-                like_count=Count("likes", distinct=True),
-                liked_by_me=Value(False, output_field=BooleanField()),
-                comment_count=Count("comments", distinct=True),  # ✅ 新增
-            )
+        qs = base_qs.annotate(
+            like_count=Count("likes", distinct=True),
+            liked_by_me=Exists(PostLike.objects.filter(post_id=OuterRef("pk"), user_id=user.id)),
+            comment_count=Count("comments", distinct=True),  # ✅ 新增
+        )
 
         return Response(PostSerializer(qs, many=True, context={"request": request}).data)
 
