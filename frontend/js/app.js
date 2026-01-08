@@ -93,6 +93,9 @@ window.__postScope = {
     });
   }
 
+  window.renderAvatar = renderAvatar;
+  window.bindAvatarFallbacks = bindAvatarFallbacks;
+
   function splitToTags(raw) {
     const s = (raw || "").trim();
     if (!s) return [];
