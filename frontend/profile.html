@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>个人中心 - 校园备忘录</title>
+
+  <link rel="stylesheet" href="vendor/tailwind.min.css">
+  <link rel="stylesheet" href="vendor/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    body { background-color: #f5f5f5; color: #333; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .chip { display:inline-flex; align-items:center; gap:6px; border:1px solid #e5e7eb; padding:2px 8px; border-radius:999px; font-size:12px; background:#f9fafb; }
+    .post-card { background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  </style>
+</head>
+
+<body class="antialiased">
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">个人中心</h1>
+        <p class="text-sm text-gray-500">强调“内容”，从作品开始认识彼此。</p>
+      </div>
+      <a href="index.html" class="text-sm text-gray-500 hover:text-gray-700">
+        <i class="fas fa-arrow-left mr-1"></i> 返回首页
+      </a>
+    </div>
+
+    <section class="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <div class="relative h-44 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900">
+        <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25),_transparent_55%)]"></div>
+        <div class="absolute -bottom-8 left-6 flex items-end gap-4">
+          <div id="profile-avatar" class="w-20 h-20 rounded-2xl bg-white shadow-lg border flex items-center justify-center text-2xl font-bold text-indigo-600">
+            M
+          </div>
+          <div class="pb-2">
+            <div class="text-white text-xl font-semibold" id="profile-name">加载中…</div>
+            <div class="text-white/80 text-sm" id="profile-signature">正在同步签名</div>
+          </div>
+        </div>
+      </div>
+      <div class="pt-12 pb-5 px-6 text-sm text-gray-500 flex flex-wrap items-center gap-3">
+        <span class="chip"><i class="fas fa-venus-mars text-gray-400"></i> 性别：<span id="profile-gender">保密</span></span>
+        <span class="chip"><i class="fas fa-location-dot text-gray-400"></i> 所在地：<span id="profile-location">待补充</span></span>
+        <span class="chip"><i class="fas fa-envelope text-gray-400"></i> 邮箱：<span id="profile-email">—</span></span>
+        <span class="chip"><i class="fas fa-calendar text-gray-400"></i> 加入于 <span id="profile-joined">—</span></span>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800">我的内容</h3>
+              <p class="text-xs text-gray-500 mt-1">点击头像后立刻看到写的东西。</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-500">
+              <span class="chip">已发布 <span id="profile-published-count">0</span></span>
+              <span class="chip">草稿 <span id="profile-draft-count">0</span></span>
+            </div>
+          </div>
+          <div class="space-y-4" id="profile-posts"></div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h4 class="text-sm font-semibold text-gray-800 mb-4">内容管理</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <button class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>草稿</span>
+              <span class="text-xs text-gray-400" id="profile-draft-count-alt">0</span>
+            </button>
+            <button class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>已发布</span>
+              <span class="text-xs text-gray-400" id="profile-published-count-alt">0</span>
+            </button>
+            <button class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>回收站</span>
+              <span class="text-xs text-gray-400" id="profile-trash-count">0</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h4 class="text-sm font-semibold text-gray-800 mb-4">基础信息</h4>
+          <div class="space-y-3 text-sm text-gray-600">
+            <div class="flex items-center justify-between">
+              <span>昵称</span>
+              <span class="text-gray-900 font-medium" id="profile-nickname">—</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>用户名</span>
+              <span class="text-gray-900 font-medium" id="profile-username">—</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>一句话介绍</span>
+              <span class="text-gray-900 font-medium" id="profile-bio">—</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>联系方式</span>
+              <span class="text-gray-900 font-medium" id="profile-contact">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-sm font-semibold text-gray-800">个人设置入口</h4>
+            <span class="text-xs text-gray-400">我能改什么</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <button class="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>编辑个人资料</span>
+              <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+            </button>
+            <button class="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>账号安全设置</span>
+              <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+            </button>
+            <button class="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>隐私设置</span>
+              <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+            </button>
+            <button class="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <span>通知设置</span>
+              <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h4 class="text-sm font-semibold text-gray-800 mb-4">我的风格</h4>
+          <div class="space-y-3 text-sm text-gray-600">
+            <div class="flex items-center justify-between">
+              <span>背景图</span>
+              <div class="w-16 h-10 rounded-lg bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400"></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>主题色</span>
+              <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-indigo-500"></span>
+                <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
+                <span class="w-4 h-4 rounded-full bg-amber-500"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h4 class="text-sm font-semibold text-gray-800 mb-4">互动功能区</h4>
+          <div class="space-y-3 text-sm">
+            <button class="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+              关注 / 取消关注
+            </button>
+            <button class="w-full px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              引用回复
+            </button>
+            <button class="w-full px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center justify-between">
+              <span>RSS 订阅</span>
+              <i class="fas fa-rss text-orange-500"></i>
+            </button>
+            <p class="text-xs text-gray-400">收藏 / 点赞体现在每篇笔记内。</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h4 class="text-sm font-semibold text-gray-800 mb-4">统计区</h4>
+          <div class="space-y-4 text-sm text-gray-600">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span>活跃时间线</span>
+                <span class="text-xs text-gray-400">最近 30 天</span>
+              </div>
+              <div class="grid grid-cols-10 gap-1">
+                <span class="w-3 h-3 rounded bg-emerald-100"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200"></span>
+                <span class="w-3 h-3 rounded bg-emerald-50"></span>
+                <span class="w-3 h-3 rounded bg-emerald-300"></span>
+                <span class="w-3 h-3 rounded bg-emerald-100"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200"></span>
+                <span class="w-3 h-3 rounded bg-emerald-50"></span>
+                <span class="w-3 h-3 rounded bg-emerald-300"></span>
+                <span class="w-3 h-3 rounded bg-emerald-100"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200"></span>
+                <span class="w-3 h-3 rounded bg-emerald-50"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200"></span>
+                <span class="w-3 h-3 rounded bg-emerald-100"></span>
+                <span class="w-3 h-3 rounded bg-emerald-300"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200"></span>
+                <span class="w-3 h-3 rounded bg-emerald-50"></span>
+                <span class="w-3 h-3 rounded bg-emerald-100"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200"></span>
+                <span class="w-3 h-3 rounded bg-emerald-50"></span>
+                <span class="w-3 h-3 rounded bg-emerald-300"></span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>字数统计</span>
+              <span class="text-gray-900 font-semibold">共写下 50 万字</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

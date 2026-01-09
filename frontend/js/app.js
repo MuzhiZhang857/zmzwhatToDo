@@ -832,7 +832,6 @@ function showTeamSection() {
   window.TeamModule?.loadTeamList?.();
 }
 
-
 function showHomeSection() {
   // 回到首页视图
   document.getElementById("team-section")?.classList.add("hidden");
