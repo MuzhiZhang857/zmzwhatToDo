@@ -21,4 +21,5 @@ urlpatterns = [
     path("admin/users/<int:user_id>/password/", AdminUserPasswordResetView.as_view()),
     path("token/refresh/", SafeTokenRefreshView.as_view()),
 
+
 ]
