@@ -32,20 +32,20 @@
       <div class="relative h-44 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900">
         <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25),_transparent_55%)]"></div>
         <div class="absolute -bottom-8 left-6 flex items-end gap-4">
-          <div id="profile-avatar" class="w-20 h-20 rounded-2xl bg-white shadow-lg border flex items-center justify-center text-2xl font-bold text-indigo-600">
+          <div class="w-20 h-20 rounded-2xl bg-white shadow-lg border flex items-center justify-center text-2xl font-bold text-indigo-600">
             M
           </div>
           <div class="pb-2">
-            <div class="text-white text-xl font-semibold" id="profile-name">加载中…</div>
-            <div class="text-white/80 text-sm" id="profile-signature">正在同步签名</div>
+            <div class="text-white text-xl font-semibold">Momo / momo_2024</div>
+            <div class="text-white/80 text-sm">用笔记记录灵感，让行动发生。</div>
           </div>
         </div>
       </div>
       <div class="pt-12 pb-5 px-6 text-sm text-gray-500 flex flex-wrap items-center gap-3">
-        <span class="chip"><i class="fas fa-venus-mars text-gray-400"></i> 性别：<span id="profile-gender">保密</span></span>
-        <span class="chip"><i class="fas fa-location-dot text-gray-400"></i> 所在地：<span id="profile-location">待补充</span></span>
-        <span class="chip"><i class="fas fa-envelope text-gray-400"></i> 邮箱：<span id="profile-email">—</span></span>
-        <span class="chip"><i class="fas fa-calendar text-gray-400"></i> 加入于 <span id="profile-joined">—</span></span>
+        <span class="chip"><i class="fas fa-venus-mars text-gray-400"></i> 性别：保密</span>
+        <span class="chip"><i class="fas fa-location-dot text-gray-400"></i> 所在地：上海</span>
+        <span class="chip"><i class="fas fa-envelope text-gray-400"></i> 邮箱：momo@campus.dev</span>
+        <span class="chip"><i class="fas fa-calendar text-gray-400"></i> 加入于 2023-06</span>
       </div>
     </section>
 
@@ -58,11 +58,25 @@
               <p class="text-xs text-gray-500 mt-1">点击头像后立刻看到写的东西。</p>
             </div>
             <div class="flex items-center gap-2 text-xs text-gray-500">
-              <span class="chip">已发布 <span id="profile-published-count">0</span></span>
-              <span class="chip">草稿 <span id="profile-draft-count">0</span></span>
+              <span class="chip">已发布 128</span>
+              <span class="chip">草稿 9</span>
             </div>
           </div>
-          <div class="space-y-4" id="profile-posts"></div>
+          <div class="space-y-4">
+            <article class="post-card p-4">
+              <div class="text-sm text-gray-500 mb-2">今日随记</div>
+              <div class="text-gray-800">整理了高数错题，把每个易错点整理成模板，准备分享给同学。</div>
+              <div class="text-xs text-gray-400 mt-3">收藏/点赞在文章内呈现</div>
+            </article>
+            <article class="post-card p-4">
+              <div class="text-sm text-gray-500 mb-2">本周目标清单</div>
+              <ul class="list-disc pl-4 text-gray-700 space-y-1">
+                <li>完成课程总结与复盘</li>
+                <li>写 2 篇读书笔记</li>
+                <li>整理可复用的写作模板</li>
+              </ul>
+            </article>
+          </div>
         </div>
 
         <div class="bg-white p-5 rounded-xl shadow-sm border">
@@ -70,15 +84,15 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <button class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50">
               <span>草稿</span>
-              <span class="text-xs text-gray-400" id="profile-draft-count-alt">0</span>
+              <span class="text-xs text-gray-400">9</span>
             </button>
             <button class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50">
               <span>已发布</span>
-              <span class="text-xs text-gray-400" id="profile-published-count-alt">0</span>
+              <span class="text-xs text-gray-400">128</span>
             </button>
             <button class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50">
               <span>回收站</span>
-              <span class="text-xs text-gray-400" id="profile-trash-count">0</span>
+              <span class="text-xs text-gray-400">3</span>
             </button>
           </div>
         </div>
@@ -90,19 +104,19 @@
           <div class="space-y-3 text-sm text-gray-600">
             <div class="flex items-center justify-between">
               <span>昵称</span>
-              <span class="text-gray-900 font-medium" id="profile-nickname">—</span>
+              <span class="text-gray-900 font-medium">Momo</span>
             </div>
             <div class="flex items-center justify-between">
               <span>用户名</span>
-              <span class="text-gray-900 font-medium" id="profile-username">—</span>
+              <span class="text-gray-900 font-medium">@momo_2024</span>
             </div>
             <div class="flex items-center justify-between">
               <span>一句话介绍</span>
-              <span class="text-gray-900 font-medium" id="profile-bio">—</span>
+              <span class="text-gray-900 font-medium">做一个会写的人</span>
             </div>
             <div class="flex items-center justify-between">
               <span>联系方式</span>
-              <span class="text-gray-900 font-medium" id="profile-contact">—</span>
+              <span class="text-gray-900 font-medium">小红书 / X</span>
             </div>
           </div>
         </div>
@@ -207,8 +221,5 @@
       </aside>
     </div>
   </main>
-
-  <script src="js/api.js"></script>
-  <script src="js/profile.js"></script>
 </body>
 </html>
