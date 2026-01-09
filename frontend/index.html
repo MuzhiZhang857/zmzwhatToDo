@@ -137,15 +137,34 @@
             <div id="team-detail-section" class="hidden space-y-6">
 
               <!-- 团队发布（保留不删；如果你只用唯一发布器，可在 app.js 里隐藏此卡） -->
-              <div class="post-card p-4">
-                <form id="team-post-form">
-                  <input type="text" id="team-post-title" placeholder="话题标题..."
-                         class="w-full mb-2 p-2 border-b focus:outline-none focus:border-gray-400" required>
-                  <textarea id="team-post-content" rows="3" placeholder="在团队内分享点什么..."
-                            class="w-full p-2 text-sm focus:outline-none resize-none" required></textarea>
-                  <div class="flex justify-end mt-2">
+              <div class="post-card p-5">
+                <div class="flex items-start gap-3 mb-4">
+                  <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <i class="fas fa-pen"></i>
+                  </div>
+                  <div>
+                    <div class="font-semibold text-gray-800">团队发布</div>
+                    <div class="text-xs text-gray-500 mt-1">分享进展、问题或会议纪要，让团队成员及时同步。</div>
+                  </div>
+                </div>
+                <form id="team-post-form" class="space-y-3">
+                  <label class="block text-xs text-gray-500">话题标题</label>
+                  <input type="text" id="team-post-title" placeholder="例如：本周冲刺安排 / 任务拆解"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required>
+                  <label class="block text-xs text-gray-500">内容</label>
+                  <textarea id="team-post-content" rows="4" placeholder="写下要同步的关键点：目标、阻塞、下一步计划..."
+                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-none" required></textarea>
+                  <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>建议包含：进度 / 风险 / 负责人</span>
+                    <span>团队可见</span>
+                  </div>
+                  <div class="flex justify-end gap-2">
+                    <button type="reset"
+                            class="px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
+                      清空
+                    </button>
                     <button type="submit"
-                            class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">
+                            class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 text-sm">
                       发布
                     </button>
                   </div>
