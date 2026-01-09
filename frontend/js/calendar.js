@@ -145,9 +145,6 @@
     const el = document.getElementById("calendar-container");
     if (!el) return;
 
-    el.innerHTML = "";
-    el.style.height = "220px";
-
     const now = new Date();
     const { start, end } = monthRange(now);
     const from = ymd(start);
@@ -157,9 +154,12 @@
     try {
       stats = await fetchCalendarStats(from, to);
     } catch (err) {
-      el.innerHTML = `<div class="text-xs text-red-500">日历加载失败：${(err && err.message) || "未知错误"}</div>`;
+      console.error("日历加载失败:", err);
       return;
     }
+
+    el.innerHTML = "";
+    el.style.height = "220px";
 
     const { aMap, cMap } = buildMaps(stats.activity, stats.completion);
 

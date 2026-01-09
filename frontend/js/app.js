@@ -804,9 +804,7 @@ window.__postScope = {
  * 处理 首页广场 与 团队中心 之间的显示隐藏
  */
 function mountComposerIntoTeam() {
-  const composer = document.getElementById("publish-card");
-  const slot = document.getElementById("team-composer-slot");
-  if (composer && slot && !slot.contains(composer)) slot.appendChild(composer);
+  // 团队发布使用专用发布器，不移动通用发布器
 }
 
 function mountComposerIntoHome() {
@@ -828,7 +826,7 @@ function showTeamSection() {
   window.__postScope.type = "team";
 
   // 发布器仍然显示
-  document.getElementById("publish-card")?.classList.remove("hidden");
+  document.getElementById("publish-card")?.classList.add("hidden");
 
   // 只负责加载团队列表
   window.TeamModule?.loadTeamList?.();
